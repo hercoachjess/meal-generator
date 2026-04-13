@@ -2,7 +2,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { jsPDF } from "jspdf";
-import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { createClient } from "../../lib/supabase/client";
 
 const MEAL_TYPES = ["Breakfast", "Lunch", "Dinner"];
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -356,7 +357,8 @@ function downloadPDF(weekDates, plannerSlots, weekOffset) {
 }
 
 export default function PlannerPage() {
-  const { data: session } = useSession();
+  const [user, setUser] = useState(null);
+  const router = useRouter();
   const [weekOffset, setWeekOffset] = useState(0);
   const [plannerSlots, setPlannerSlots] = useState({});
   const [favourites, setFavourites] = useState([]);
@@ -365,6 +367,8 @@ export default function PlannerPage() {
   const weekDates = getWeekDates(weekOffset);
 
   useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
     try {
       const saved = JSON.parse(localStorage.getItem("weeklyPlanner") || "{}");
       setPlannerSlots(saved.slots || {});
@@ -410,10 +414,18 @@ export default function PlannerPage() {
           <Link href="/" style={{ color: "#4ecdc4", fontSize: 13, fontWeight: 600, textDecoration: "none", opacity: 0.8 }}>
             ← Back to Generator
           </Link>
-          {session && (
+          {user && (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              {session.user.image && <img src={session.user.image} alt="" style={{ width: 26, height: 26, borderRadius: "50%", border: "2px solid #4ecdc444" }} />}
-              <button onClick={() => signOut({ callbackUrl: "/login" })} style={{ background: "none", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, color: "#666", fontSize: 11, padding: "4px 10px", cursor: "pointer", fontWeight: 600 }}>Sign out</button>
+              <span style={{ color: "#888", fontSize: 11 }}>{user.email}</span>
+              <button
+                onClick={async () => {
+                  const supabase = createClient();
+                  await supabase.auth.signOut();
+                  router.push("/login");
+                  router.refresh();
+                }}
+                style={{ background: "none", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, color: "#666", fontSize: 11, padding: "4px 10px", cursor: "pointer", fontWeight: 600 }}
+              >Sign out</button>
             </div>
           )}
         </div>
