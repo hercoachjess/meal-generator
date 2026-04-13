@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 
 const FLAVOR_PROFILES = ["Mediterranean", "Spicy", "Comfort Food", "Asian", "High Protein", "Vegetarian"];
 
@@ -231,6 +232,11 @@ export default function Home() {
         <p style={{ color: "#888", marginTop: 12, fontSize: 14, maxWidth: 380, margin: "12px auto 0" }}>
           Enter your targets. Get a perfectly matched meal — from your library or invented just for you.
         </p>
+        <div style={{ marginTop: 16 }}>
+          <Link href="/planner" style={{ display: "inline-block", padding: "9px 22px", borderRadius: 20, border: "1px solid rgba(78,205,196,0.4)", color: "#4ecdc4", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+            📅 Weekly Meal Planner
+          </Link>
+        </div>
       </div>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 16px" }}>
         <div style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(20px)", borderRadius: 24, padding: 26, border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 30px 80px rgba(0,0,0,0.4)" }}>
