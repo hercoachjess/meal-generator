@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { jsPDF } from "jspdf";
+import { useSession, signOut } from "next-auth/react";
 
 const MEAL_TYPES = ["Breakfast", "Lunch", "Dinner"];
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -355,6 +356,7 @@ function downloadPDF(weekDates, plannerSlots, weekOffset) {
 }
 
 export default function PlannerPage() {
+  const { data: session } = useSession();
   const [weekOffset, setWeekOffset] = useState(0);
   const [plannerSlots, setPlannerSlots] = useState({});
   const [favourites, setFavourites] = useState([]);
@@ -404,9 +406,17 @@ export default function PlannerPage() {
     <div style={{ minHeight: "100vh", background: "radial-gradient(ellipse at top left,#0f0c29,#302b63,#24243e)", padding: "0 0 60px" }}>
       {/* Header */}
       <div style={{ textAlign: "center", padding: "40px 20px 24px" }}>
-        <Link href="/" style={{ display: "inline-block", marginBottom: 16, color: "#4ecdc4", fontSize: 13, fontWeight: 600, textDecoration: "none", opacity: 0.8 }}>
-          ← Back to Generator
-        </Link>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: 400, margin: "0 auto 16px", padding: "0 4px" }}>
+          <Link href="/" style={{ color: "#4ecdc4", fontSize: 13, fontWeight: 600, textDecoration: "none", opacity: 0.8 }}>
+            ← Back to Generator
+          </Link>
+          {session && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {session.user.image && <img src={session.user.image} alt="" style={{ width: 26, height: 26, borderRadius: "50%", border: "2px solid #4ecdc444" }} />}
+              <button onClick={() => signOut({ callbackUrl: "/login" })} style={{ background: "none", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, color: "#666", fontSize: 11, padding: "4px 10px", cursor: "pointer", fontWeight: 600 }}>Sign out</button>
+            </div>
+          )}
+        </div>
         <h1 style={{ fontSize: "clamp(24px,4vw,40px)", fontFamily: "Georgia, serif", color: "#fff", margin: 0, lineHeight: 1.1 }}>
           Weekly Meal <span style={{ color: "#4ecdc4" }}>Planner</span>
         </h1>

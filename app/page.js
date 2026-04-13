@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
 
 const FLAVOR_PROFILES = ["Mediterranean", "Spicy", "Comfort Food", "Asian", "High Protein", "Vegetarian"];
 
@@ -145,6 +146,22 @@ function FavouritesSection({ favourites, onRemove }) {
   );
 }
 
+function UserBar() {
+  const { data: session } = useSession();
+  if (!session) return null;
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10, padding: "12px 20px 0", maxWidth: 460, margin: "0 auto" }}>
+      {session.user.image && (
+        <img src={session.user.image} alt={session.user.name} style={{ width: 30, height: 30, borderRadius: "50%", border: "2px solid #4ecdc444" }} />
+      )}
+      <span style={{ color: "#888", fontSize: 12 }}>{session.user.name || session.user.email}</span>
+      <button onClick={() => signOut({ callbackUrl: "/login" })} style={{ background: "none", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, color: "#666", fontSize: 11, padding: "4px 10px", cursor: "pointer", fontWeight: 600 }}>
+        Sign out
+      </button>
+    </div>
+  );
+}
+
 export default function Home() {
   const [calories, setCalories] = useState(550);
   const [protein, setProtein] = useState(40);
@@ -224,7 +241,8 @@ export default function Home() {
 
   return (
     <div style={{ minHeight: "100vh", background: "radial-gradient(ellipse at top left,#0f0c29,#302b63,#24243e)", padding: "0 0 60px" }}>
-      <div style={{ textAlign: "center", padding: "50px 20px 30px" }}>
+      <UserBar />
+      <div style={{ textAlign: "center", padding: "30px 20px 30px" }}>
         <div style={{ fontSize: 12, color: "#4ecdc4", letterSpacing: 3, textTransform: "uppercase", fontWeight: 600, marginBottom: 10 }}>AI-Powered</div>
         <h1 style={{ fontSize: "clamp(28px,5vw,50px)", fontFamily: "Georgia, serif", color: "#fff", margin: 0, lineHeight: 1.1 }}>
           Macro Meal<br /><span style={{ color: "#4ecdc4" }}>Generator</span>
