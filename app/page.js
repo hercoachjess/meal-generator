@@ -243,7 +243,8 @@ export default function Home() {
     <div style={{ minHeight: "100vh", background: "radial-gradient(ellipse at top left,#0f0c29,#302b63,#24243e)", padding: "0 0 60px" }}>
       <UserBar />
       <div style={{ textAlign: "center", padding: "30px 20px 30px" }}>
-        <div style={{ fontSize: 12, color: "#4ecdc4", letterSpacing: 3, textTransform: "uppercase", fontWeight: 600, marginBottom: 10 }}>AI-Powered</div>
+        <div style={{ fontSize: 13, color: "#ff6b6b", letterSpacing: 2, textTransform: "uppercase", fontWeight: 800, marginBottom: 4, fontFamily: "Georgia, serif" }}>HerCoachJess</div>
+        <div style={{ fontSize: 11, color: "#4ecdc4", letterSpacing: 3, textTransform: "uppercase", fontWeight: 600, marginBottom: 10 }}>AI-Powered</div>
         <h1 style={{ fontSize: "clamp(28px,5vw,50px)", fontFamily: "Georgia, serif", color: "#fff", margin: 0, lineHeight: 1.1 }}>
           Macro Meal<br /><span style={{ color: "#4ecdc4" }}>Generator</span>
         </h1>
@@ -319,6 +320,10 @@ export default function Home() {
         )}
       </div>
       <FavouritesSection favourites={favourites} onRemove={removeFavourite} />
+      <div style={{ textAlign: "center", marginTop: 48, paddingBottom: 16 }}>
+        <div style={{ fontSize: 13, color: "#ff6b6b", fontFamily: "Georgia, serif", fontWeight: 800, letterSpacing: 1 }}>HerCoachJess</div>
+        <div style={{ fontSize: 11, color: "#333", marginTop: 4 }}>Macro Meal Generator</div>
+      </div>
     </div>
   );
 }

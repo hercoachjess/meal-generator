@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Macro Meal Generator",
-  description: "AI-powered macro meal planning",
+  title: "HerCoachJess | Macro Meal Generator",
+  description: "AI-powered macro meal planning by HerCoachJess",
 };
 
 export default function RootLayout({ children }) {

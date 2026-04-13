@@ -22,7 +22,7 @@ export default function LoginPage() {
   return (
     <div style={{ minHeight: "100vh", background: "radial-gradient(ellipse at top left,#0f0c29,#302b63,#24243e)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
       <div style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(20px)", borderRadius: 24, padding: "48px 36px", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 30px 80px rgba(0,0,0,0.4)", textAlign: "center", maxWidth: 380, width: "100%" }}>
-        <div style={{ fontSize: 12, color: "#4ecdc4", letterSpacing: 3, textTransform: "uppercase", fontWeight: 600, marginBottom: 12 }}>Welcome to</div>
+        <div style={{ fontSize: 14, color: "#ff6b6b", letterSpacing: 2, textTransform: "uppercase", fontWeight: 800, marginBottom: 8, fontFamily: "Georgia, serif" }}>HerCoachJess</div>
         <h1 style={{ fontSize: 28, fontFamily: "Georgia, serif", color: "#fff", margin: "0 0 8px", lineHeight: 1.2 }}>
           Macro Meal<br /><span style={{ color: "#4ecdc4" }}>Generator</span>
         </h1>

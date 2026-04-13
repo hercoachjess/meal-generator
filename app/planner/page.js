@@ -417,6 +417,7 @@ export default function PlannerPage() {
             </div>
           )}
         </div>
+        <div style={{ fontSize: 12, color: "#ff6b6b", letterSpacing: 2, textTransform: "uppercase", fontWeight: 800, marginBottom: 4, fontFamily: "Georgia, serif" }}>HerCoachJess</div>
         <h1 style={{ fontSize: "clamp(24px,4vw,40px)", fontFamily: "Georgia, serif", color: "#fff", margin: 0, lineHeight: 1.1 }}>
           Weekly Meal <span style={{ color: "#4ecdc4" }}>Planner</span>
         </h1>
