@@ -1,5 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createClient } from "../lib/supabase/client";
 
 const FLAVOR_PROFILES = ["Mediterranean", "Spicy", "Comfort Food", "Asian", "High Protein", "Vegetarian"];
 
@@ -40,7 +43,9 @@ function getFallbackImage(flavor) {
   const seeds = { Mediterranean: 292, Spicy: 431, "Comfort Food": 167, Asian: 312, "High Protein": 488, Vegetarian: 145 };
   const seed = seeds[flavor] || 200;
   return `https://picsum.photos/seed/${seed}/800/500`;
-}function MacroRing({ label, value, unit, color }) {
+}
+
+function MacroRing({ label, value, unit, color }) {
   return (
     <div style={{ textAlign: "center" }}>
       <div style={{ width: 68, height: 68, borderRadius: "50%", border: `3px solid ${color}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: `${color}18`, margin: "0 auto 6px", boxShadow: `0 0 14px ${color}40` }}>
@@ -52,14 +57,21 @@ function getFallbackImage(flavor) {
   );
 }
 
-function RecipeCard({ recipe, flavor, imageUrl }) {
+function RecipeCard({ recipe, flavor, imageUrl, isFavourite, onToggleFavourite }) {
   const [expanded, setExpanded] = useState(false);
   return (
     <div style={{ background: "linear-gradient(160deg,#1a1a2e,#16213e)", borderRadius: 20, overflow: "hidden", border: "1px solid #2a2a4a", boxShadow: "0 20px 60px rgba(0,0,0,0.5)", marginBottom: 24 }}>
       <div style={{ position: "relative", height: 220, overflow: "hidden" }}>
         <img src={imageUrl} alt={recipe.name} style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.7)" }} onError={e => { e.target.src = getFallbackImage(flavor); }} />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top,#1a1a2e,transparent 60%)" }} />
-        <div style={{ position: "absolute", bottom: 14, left: 18, right: 18 }}>
+        <button
+          onClick={() => onToggleFavourite(recipe, imageUrl)}
+          style={{ position: "absolute", top: 12, right: 14, background: "rgba(0,0,0,0.45)", border: "none", borderRadius: "50%", width: 40, height: 40, cursor: "pointer", fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(6px)", transition: "transform 0.15s" }}
+          aria-label={isFavourite ? "Remove from favourites" : "Save to favourites"}
+        >
+          {isFavourite ? "❤️" : "🤍"}
+        </button>
+        <div style={{ position: "absolute", bottom: 14, left: 18, right: 60 }}>
           <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: "Georgia, serif", lineHeight: 1.2 }}>{recipe.name}</div>
           {recipe.tagline && <div style={{ fontSize: 13, color: "#aaa", marginTop: 4 }}>{recipe.tagline}</div>}
         </div>
@@ -105,6 +117,63 @@ function RecipeCard({ recipe, flavor, imageUrl }) {
   );
 }
 
+function FavouritesSection({ favourites, onRemove }) {
+  const [open, setOpen] = useState(false);
+  if (favourites.length === 0) return null;
+  return (
+    <div style={{ maxWidth: 460, margin: "32px auto 0", padding: "0 16px" }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,107,107,0.3)", borderRadius: 16, padding: "14px 20px", color: "#ff6b6b", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}
+      >
+        <span>❤️ Saved Favourites ({favourites.length})</span>
+        <span style={{ fontSize: 12 }}>{open ? "▲ Hide" : "▼ Show"}</span>
+      </button>
+      {open && (
+        <div style={{ marginTop: 16 }}>
+          {favourites.map((fav, i) => (
+            <RecipeCard
+              key={fav.savedAt}
+              recipe={fav.recipe}
+              flavor={fav.flavor}
+              imageUrl={fav.imageUrl}
+              isFavourite={true}
+              onToggleFavourite={() => onRemove(fav.savedAt)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UserBar() {
+  const [user, setUser] = useState(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
+  }, []);
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
+
+  if (!user) return null;
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10, padding: "12px 20px 0", maxWidth: 460, margin: "0 auto" }}>
+      <span style={{ color: "#888", fontSize: 12 }}>{user.email}</span>
+      <button onClick={handleSignOut} style={{ background: "none", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, color: "#666", fontSize: 11, padding: "4px 10px", cursor: "pointer", fontWeight: 600 }}>
+        Sign out
+      </button>
+    </div>
+  );
+}
+
 export default function Home() {
   const [calories, setCalories] = useState(550);
   const [protein, setProtein] = useState(40);
@@ -115,6 +184,39 @@ export default function Home() {
   const [recipes, setRecipes] = useState([]);
   const [imageUrls, setImageUrls] = useState({});
   const [error, setError] = useState(null);
+  const [favourites, setFavourites] = useState([]);
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("mealFavourites") || "[]");
+      setFavourites(saved);
+    } catch {
+      // ignore parse errors
+    }
+  }, []);
+
+  function toggleFavourite(recipe, imageUrl) {
+    setFavourites(prev => {
+      const exists = prev.find(f => f.recipe.name === recipe.name);
+      const next = exists
+        ? prev.filter(f => f.recipe.name !== recipe.name)
+        : [...prev, { recipe, flavor, imageUrl, savedAt: Date.now() }];
+      localStorage.setItem("mealFavourites", JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function removeFavourite(savedAt) {
+    setFavourites(prev => {
+      const next = prev.filter(f => f.savedAt !== savedAt);
+      localStorage.setItem("mealFavourites", JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function isFavourite(recipe) {
+    return favourites.some(f => f.recipe.name === recipe.name);
+  }
 
   async function handleGenerate(surpriseMe = false) {
     setError(null);
@@ -151,14 +253,21 @@ export default function Home() {
 
   return (
     <div style={{ minHeight: "100vh", background: "radial-gradient(ellipse at top left,#0f0c29,#302b63,#24243e)", padding: "0 0 60px" }}>
-      <div style={{ textAlign: "center", padding: "50px 20px 30px" }}>
-        <div style={{ fontSize: 12, color: "#4ecdc4", letterSpacing: 3, textTransform: "uppercase", fontWeight: 600, marginBottom: 10 }}>AI-Powered</div>
+      <UserBar />
+      <div style={{ textAlign: "center", padding: "30px 20px 30px" }}>
+        <div style={{ fontSize: 13, color: "#ff6b6b", letterSpacing: 2, textTransform: "uppercase", fontWeight: 800, marginBottom: 4, fontFamily: "Georgia, serif" }}>HerCoachJess</div>
+        <div style={{ fontSize: 11, color: "#4ecdc4", letterSpacing: 3, textTransform: "uppercase", fontWeight: 600, marginBottom: 10 }}>AI-Powered</div>
         <h1 style={{ fontSize: "clamp(28px,5vw,50px)", fontFamily: "Georgia, serif", color: "#fff", margin: 0, lineHeight: 1.1 }}>
           Macro Meal<br /><span style={{ color: "#4ecdc4" }}>Generator</span>
         </h1>
         <p style={{ color: "#888", marginTop: 12, fontSize: 14, maxWidth: 380, margin: "12px auto 0" }}>
           Enter your targets. Get a perfectly matched meal — from your library or invented just for you.
         </p>
+        <div style={{ marginTop: 16 }}>
+          <Link href="/planner" style={{ display: "inline-block", padding: "9px 22px", borderRadius: 20, border: "1px solid rgba(78,205,196,0.4)", color: "#4ecdc4", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
+            📅 Weekly Meal Planner
+          </Link>
+        </div>
       </div>
       <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 16px" }}>
         <div style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(20px)", borderRadius: 24, padding: 26, border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 30px 80px rgba(0,0,0,0.4)" }}>
@@ -204,7 +313,14 @@ export default function Home() {
         {error && <div style={{ background: "#ff6b6b22", border: "1px solid #ff6b6b44", borderRadius: 12, padding: 14, marginTop: 14, color: "#ff6b6b", fontSize: 13 }}>⚠️ {error}</div>}
         <div style={{ marginTop: 18 }}>
           {recipes.map((recipe, i) => (
-            <RecipeCard key={i} recipe={recipe} flavor={flavor} imageUrl={imageUrls[i] || getFallbackImage(flavor)} />
+            <RecipeCard
+              key={i}
+              recipe={recipe}
+              flavor={flavor}
+              imageUrl={imageUrls[i] || getFallbackImage(flavor)}
+              isFavourite={isFavourite(recipe)}
+              onToggleFavourite={toggleFavourite}
+            />
           ))}
         </div>
         {path === "DATABASE" && recipes.length > 0 && (
@@ -214,6 +330,11 @@ export default function Home() {
             </button>
           </div>
         )}
+      </div>
+      <FavouritesSection favourites={favourites} onRemove={removeFavourite} />
+      <div style={{ textAlign: "center", marginTop: 48, paddingBottom: 16 }}>
+        <div style={{ fontSize: 13, color: "#ff6b6b", fontFamily: "Georgia, serif", fontWeight: 800, letterSpacing: 1 }}>HerCoachJess</div>
+        <div style={{ fontSize: 11, color: "#333", marginTop: 4 }}>Macro Meal Generator</div>
       </div>
     </div>
   );
