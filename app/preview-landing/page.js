@@ -1,11 +1,6 @@
 "use client";
-import Link from "next/link";
 
-export default function LandingPage() {
-  function scrollTo(id) {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-  }
-
+export default function LandingPreview() {
   return (
     <div style={{ fontFamily: "'Georgia', serif", background: "#f5f5f3", minHeight: "100vh", color: "#1a1a1a" }}>
       <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet" />
@@ -18,17 +13,17 @@ export default function LandingPage() {
           <span style={{ color: "#C9A84C", fontFamily: "'Great Vibes', cursive", fontWeight: 400, fontSize: 16, marginLeft: 1, verticalAlign: "middle" }}>Jess</span>
         </div>
         <div style={{ flex: 1, display: "flex", justifyContent: "center", gap: 32, fontSize: 12, letterSpacing: 0.5, fontFamily: "sans-serif", whiteSpace: "nowrap" }}>
-          <span onClick={() => scrollTo("features")} style={{ cursor: "pointer", color: "#555" }}>Features</span>
-          <span onClick={() => scrollTo("how-it-works")} style={{ cursor: "pointer", color: "#555" }}>How It Works</span>
-          <span onClick={() => scrollTo("pricing")} style={{ cursor: "pointer", color: "#555" }}>Pricing</span>
+          <span style={{ cursor: "pointer", color: "#555" }}>Features</span>
+          <span style={{ cursor: "pointer", color: "#555" }}>How It Works</span>
+          <span style={{ cursor: "pointer", color: "#555" }}>Pricing</span>
         </div>
         <div style={{ flex: "0 0 auto", display: "flex", gap: 12, alignItems: "center", justifyContent: "flex-end", marginLeft: 40 }}>
-          <Link href="/login" style={{ padding: "11px 22px", background: "transparent", color: "#1e2d4a", border: "1px solid #1e2d4a", borderRadius: 4, fontSize: 11, fontWeight: 700, cursor: "pointer", letterSpacing: 1.5, textTransform: "uppercase", fontFamily: "sans-serif", whiteSpace: "nowrap", textDecoration: "none" }}>
+          <button style={{ padding: "11px 22px", background: "transparent", color: "#1e2d4a", border: "1px solid #1e2d4a", borderRadius: 4, fontSize: 11, fontWeight: 700, cursor: "pointer", letterSpacing: 1.5, textTransform: "uppercase", fontFamily: "sans-serif", whiteSpace: "nowrap" }}>
             Log In
-          </Link>
-          <Link href="/login" style={{ padding: "11px 28px", background: "#1e2d4a", color: "#fff", border: "none", borderRadius: 4, fontSize: 11, fontWeight: 700, cursor: "pointer", letterSpacing: 1.5, textTransform: "uppercase", fontFamily: "sans-serif", whiteSpace: "nowrap", textDecoration: "none" }}>
+          </button>
+          <button style={{ padding: "11px 28px", background: "#1e2d4a", color: "#fff", border: "none", borderRadius: 4, fontSize: 11, fontWeight: 700, cursor: "pointer", letterSpacing: 1.5, textTransform: "uppercase", fontFamily: "sans-serif", whiteSpace: "nowrap" }}>
             Get Started
-          </Link>
+          </button>
         </div>
       </nav>
 
@@ -44,10 +39,10 @@ export default function LandingPage() {
           AI-generated meal plans personalised to your body, goals and taste. Built for women who want real results without the guesswork.
         </p>
         <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-          <Link href="/login" style={{ padding: "15px 40px", background: "#C9A84C", color: "#1a1a1a", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 700, cursor: "pointer", letterSpacing: 1.5, textTransform: "uppercase", fontFamily: "sans-serif", textDecoration: "none" }}>
+          <button style={{ padding: "15px 40px", background: "#C9A84C", color: "#1a1a1a", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 700, cursor: "pointer", letterSpacing: 1.5, textTransform: "uppercase", fontFamily: "sans-serif" }}>
             Start Free Trial
-          </Link>
-          <button onClick={() => scrollTo("how-it-works")} style={{ padding: "15px 40px", background: "#1e2d4a", color: "#fff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", letterSpacing: 1, fontFamily: "sans-serif" }}>
+          </button>
+          <button style={{ padding: "15px 40px", background: "#1e2d4a", color: "#fff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 600, cursor: "pointer", letterSpacing: 1, fontFamily: "sans-serif" }}>
             See How It Works →
           </button>
         </div>
@@ -87,9 +82,9 @@ export default function LandingPage() {
       <div style={{ borderTop: "1px solid #e8e4dc", maxWidth: 860, margin: "0 auto" }} />
 
       {/* FEATURES */}
-      <section id="features" style={{ maxWidth: 960, margin: "0 auto", padding: "100px 64px", background: "#f5f5f3" }}>
+      <section style={{ maxWidth: 960, margin: "0 auto", padding: "100px 64px", background: "#f5f5f3" }}>
         <div style={{ textAlign: "center", marginBottom: 64 }}>
-          <div style={{ fontSize: 11, color: "#C9A84C", letterSpacing: 4, textTransform: "uppercase", marginBottom: 16, fontFamily: "sans-serif", fontWeight: 700 }}>What&apos;s Included</div>
+          <div style={{ fontSize: 11, color: "#C9A84C", letterSpacing: 4, textTransform: "uppercase", marginBottom: 16, fontFamily: "sans-serif", fontWeight: 700 }}>What's Included</div>
           <h2 style={{ fontSize: 34, fontWeight: 400, color: "#1a1a1a", margin: 0 }}>Everything you need to eat well</h2>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1, background: "#ddd" }}>
@@ -111,7 +106,7 @@ export default function LandingPage() {
       </section>
 
       {/* HOW IT WORKS */}
-      <section id="how-it-works" style={{ background: "#fff", padding: "100px 64px", borderTop: "1px solid #e8e4dc", borderBottom: "1px solid #e8e4dc" }}>
+      <section style={{ background: "#fff", padding: "100px 64px", borderTop: "1px solid #e8e4dc", borderBottom: "1px solid #e8e4dc" }}>
         <div style={{ maxWidth: 820, margin: "0 auto", textAlign: "center" }}>
           <div style={{ fontSize: 11, color: "#C9A84C", letterSpacing: 4, textTransform: "uppercase", marginBottom: 16, fontFamily: "sans-serif", fontWeight: 700 }}>Simple Process</div>
           <h2 style={{ fontSize: 34, fontWeight: 400, color: "#1a1a1a", marginBottom: 72 }}>Three steps to your perfect meal plan</h2>
@@ -133,7 +128,7 @@ export default function LandingPage() {
       </section>
 
       {/* PRICING */}
-      <section id="pricing" style={{ maxWidth: 600, margin: "0 auto", padding: "100px 64px", textAlign: "center" }}>
+      <section style={{ maxWidth: 600, margin: "0 auto", padding: "100px 64px", textAlign: "center" }}>
         <div style={{ fontSize: 11, color: "#C9A84C", letterSpacing: 4, textTransform: "uppercase", marginBottom: 16, fontFamily: "sans-serif", fontWeight: 700 }}>Pricing</div>
         <h2 style={{ fontSize: 34, fontWeight: 400, color: "#1a1a1a", marginBottom: 56 }}>One simple plan</h2>
         <div style={{ background: "#fff", border: "1px solid #e8e4dc", borderRadius: 8, padding: "56px 48px", boxShadow: "0 4px 40px rgba(0,0,0,0.06)" }}>
@@ -146,9 +141,9 @@ export default function LandingPage() {
               <span style={{ fontSize: 14, color: "#555", fontFamily: "sans-serif" }}>{f}</span>
             </div>
           ))}
-          <Link href="/login" style={{ display: "block", width: "100%", marginTop: 36, padding: "16px", background: "#1a1a1a", color: "#fff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 700, cursor: "pointer", letterSpacing: 2, textTransform: "uppercase", fontFamily: "sans-serif", textDecoration: "none", boxSizing: "border-box" }}>
+          <button style={{ width: "100%", marginTop: 36, padding: "16px", background: "#1a1a1a", color: "#fff", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 700, cursor: "pointer", letterSpacing: 2, textTransform: "uppercase", fontFamily: "sans-serif" }}>
             Start Free Trial
-          </Link>
+          </button>
         </div>
       </section>
 
@@ -156,10 +151,10 @@ export default function LandingPage() {
       <section style={{ background: "#1e2d4a", padding: "80px 64px", textAlign: "center" }}>
         <div style={{ fontSize: 11, color: "#C9A84C", letterSpacing: 4, textTransform: "uppercase", marginBottom: 20, fontFamily: "sans-serif", fontWeight: 700 }}>Ready to start?</div>
         <h2 style={{ fontSize: 36, fontWeight: 400, color: "#fff", marginBottom: 12 }}>Your perfect meal plan is waiting.</h2>
-        <p style={{ color: "#aaa", fontSize: 15, marginBottom: 40, fontFamily: "sans-serif" }}>Join hundreds of women eating smarter every week.</p>
-        <Link href="/login" style={{ padding: "16px 48px", background: "#C9A84C", color: "#1a1a1a", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 700, cursor: "pointer", letterSpacing: 2, textTransform: "uppercase", fontFamily: "sans-serif", textDecoration: "none" }}>
+        <p style={{ color: "#666", fontSize: 15, marginBottom: 40, fontFamily: "sans-serif" }}>Join hundreds of women eating smarter every week.</p>
+        <button style={{ padding: "16px 48px", background: "#C9A84C", color: "#1a1a1a", border: "none", borderRadius: 4, fontSize: 13, fontWeight: 700, cursor: "pointer", letterSpacing: 2, textTransform: "uppercase", fontFamily: "sans-serif" }}>
           Get Started Today
-        </Link>
+        </button>
       </section>
 
       {/* FOOTER */}
