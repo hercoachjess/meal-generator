@@ -54,41 +54,33 @@ async function fetchGoogleImage(recipeName, flavor) {
   }
 }
 
-function MacroPill({ value, unit, color }) {
-  return (
-    <span style={{ background: `${color}22`, color, fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 8, border: `1px solid ${color}44` }}>
-      {value}{unit}
-    </span>
-  );
-}
-
 function MealSlot({ dateKey, mealType, slotData, onAdd, onClear }) {
   if (!slotData) {
     return (
       <div
         onClick={onAdd}
-        style={{ minHeight: 72, border: "1px dashed rgba(255,255,255,0.12)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#555", fontSize: 12, fontWeight: 600, transition: "all 0.15s", background: "rgba(255,255,255,0.02)" }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = "#4ecdc4"; e.currentTarget.style.color = "#4ecdc4"; }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; e.currentTarget.style.color = "#555"; }}
+        style={{ minHeight: 68, border: "1px dashed #d8d4cc", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#ccc", fontSize: 18, fontWeight: 300, transition: "all 0.15s", background: "#fff" }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = "#C9A84C"; e.currentTarget.style.color = "#C9A84C"; }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = "#d8d4cc"; e.currentTarget.style.color = "#ccc"; }}
       >
-        + Add
+        +
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: 72, background: "linear-gradient(160deg,#1a1a2e,#16213e)", border: "1px solid #2a2a4a", borderRadius: 12, padding: "8px 10px", position: "relative", cursor: "default" }}>
+    <div style={{ minHeight: 68, background: "#fff", border: "1px solid #e8e4dc", borderRadius: 6, padding: "8px 10px", position: "relative" }}>
       <button
         onClick={onClear}
-        style={{ position: "absolute", top: 5, right: 6, background: "none", border: "none", color: "#555", fontSize: 14, cursor: "pointer", lineHeight: 1, padding: 0 }}
+        style={{ position: "absolute", top: 4, right: 6, background: "none", border: "none", color: "#ccc", fontSize: 16, cursor: "pointer", lineHeight: 1, padding: 0 }}
         aria-label="Remove meal"
       >×</button>
-      <div style={{ fontSize: 11, fontWeight: 700, color: "#fff", lineHeight: 1.3, marginBottom: 5, paddingRight: 14, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+      <div style={{ fontSize: 11, fontWeight: 600, color: "#1e2d4a", lineHeight: 1.35, marginBottom: 5, paddingRight: 14, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", fontFamily: "sans-serif" }}>
         {slotData.recipe.name}
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
-        <MacroPill value={slotData.recipe.calories} unit="cal" color="#ff6b6b" />
-        <MacroPill value={slotData.recipe.protein} unit="g P" color="#4ecdc4" />
+        <span style={{ fontSize: 9, background: "rgba(30,45,74,0.08)", color: "#1e2d4a", padding: "2px 6px", borderRadius: 10, fontFamily: "sans-serif", fontWeight: 700 }}>{slotData.recipe.calories} cal</span>
+        <span style={{ fontSize: 9, background: "rgba(201,168,76,0.12)", color: "#9a7a28", padding: "2px 6px", borderRadius: 10, fontFamily: "sans-serif", fontWeight: 700 }}>{slotData.recipe.protein}g P</span>
       </div>
     </div>
   );
@@ -125,120 +117,117 @@ function AddMealModal({ target, favourites, onClose, onAdd }) {
     }
   }
 
-  const tabBtn = (t, label) => (
-    <button
-      onClick={() => setTab(t)}
-      style={{ flex: 1, padding: "10px 0", background: tab === t ? "#4ecdc4" : "rgba(255,255,255,0.05)", border: "none", color: tab === t ? "#000" : "#aaa", fontWeight: 700, fontSize: 13, cursor: "pointer", borderRadius: t === "favourites" ? "10px 0 0 10px" : "0 10px 10px 0" }}
-    >
-      {label}
-    </button>
-  );
-
   return (
     <div
-      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center", backdropFilter: "blur(4px)" }}
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center", backdropFilter: "blur(4px)" }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{ background: "linear-gradient(160deg,#1a1a2e,#16213e)", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 500, maxHeight: "85vh", overflowY: "auto", padding: 24, border: "1px solid #2a2a4a" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", fontFamily: "Georgia, serif" }}>
-            Add to {target?.mealType} · {target?.dateKey}
-          </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "#888", fontSize: 22, cursor: "pointer" }}>×</button>
-        </div>
+      <div style={{ background: "#fff", borderRadius: "12px 12px 0 0", width: "100%", maxWidth: 500, maxHeight: "88vh", overflowY: "auto", border: "1px solid #e8e4dc", borderBottom: "none", boxShadow: "0 -8px 40px rgba(0,0,0,0.12)" }}>
 
-        <div style={{ display: "flex", marginBottom: 18 }}>
-          {tabBtn("favourites", `❤️ Saved (${favourites.length})`)}
-          {tabBtn("generate", "✨ Generate")}
-        </div>
-
-        {tab === "favourites" && (
-          <>
-            {favourites.length === 0 ? (
-              <div style={{ textAlign: "center", color: "#555", padding: 32, fontSize: 13 }}>
-                No saved favourites yet. Generate a meal and tap ❤️ to save it.
-              </div>
-            ) : (
-              favourites.map(fav => (
-                <div
-                  key={fav.savedAt}
-                  onClick={() => onAdd({ recipe: fav.recipe, flavor: fav.flavor, imageUrl: fav.imageUrl })}
-                  style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px", borderRadius: 12, border: "1px solid #2a2a4a", marginBottom: 10, cursor: "pointer", background: "rgba(255,255,255,0.03)", transition: "border-color 0.15s" }}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = "#4ecdc4"}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = "#2a2a4a"}
-                >
-                  <img src={fav.imageUrl} alt={fav.recipe.name} style={{ width: 56, height: 56, borderRadius: 8, objectFit: "cover", flexShrink: 0 }} onError={e => { e.target.src = getFallbackImage(fav.flavor); }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fav.recipe.name}</div>
-                    <div style={{ display: "flex", gap: 5 }}>
-                      <MacroPill value={fav.recipe.calories} unit="cal" color="#ff6b6b" />
-                      <MacroPill value={fav.recipe.protein} unit="g P" color="#4ecdc4" />
-                      <MacroPill value={fav.recipe.carbs} unit="g C" color="#ffe66d" />
-                    </div>
-                  </div>
-                  <span style={{ color: "#4ecdc4", fontSize: 18 }}>+</span>
-                </div>
-              ))
-            )}
-          </>
-        )}
-
-        {tab === "generate" && (
+        {/* Modal header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 24px 16px", borderBottom: "1px solid #e8e4dc" }}>
           <div>
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#ccc", marginBottom: 6 }}>
-                🔥 Calories: <span style={{ color: "#ff6b6b", fontWeight: 700 }}>{calories} kcal</span>
-              </label>
-              <input type="range" min={300} max={900} value={calories} onChange={e => setCalories(+e.target.value)} style={{ width: "100%", accentColor: "#ff6b6b" }} />
-            </div>
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#ccc", marginBottom: 6 }}>
-                💪 Protein: <span style={{ color: "#4ecdc4", fontWeight: 700 }}>{protein}g</span>
-              </label>
-              <input type="range" min={10} max={80} value={protein} onChange={e => setProtein(+e.target.value)} style={{ width: "100%", accentColor: "#4ecdc4" }} />
-            </div>
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#ccc", marginBottom: 6 }}>🥩 Key Ingredient</label>
-              <input type="text" placeholder="e.g. salmon, tofu, chicken..." value={ingredient} onChange={e => setIngredient(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, padding: "10px 12px", color: "#fff", fontSize: 13, boxSizing: "border-box" }} />
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#ccc", marginBottom: 6 }}>🌶️ Flavor Profile</label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {FLAVOR_PROFILES.map(f => (
-                  <button key={f} onClick={() => setFlavor(f)} style={{ padding: "6px 11px", borderRadius: 20, fontSize: 11, cursor: "pointer", fontWeight: 600, background: flavor === f ? "#4ecdc4" : "rgba(255,255,255,0.07)", color: flavor === f ? "#000" : "#aaa", border: flavor === f ? "1px solid #4ecdc4" : "1px solid rgba(255,255,255,0.1)" }}>{f}</button>
-                ))}
+            <div style={{ fontSize: 11, color: "#C9A84C", letterSpacing: 3, textTransform: "uppercase", fontFamily: "sans-serif", fontWeight: 700, marginBottom: 2 }}>{target?.mealType}</div>
+            <div style={{ fontSize: 16, fontWeight: 600, color: "#1e2d4a", fontFamily: "Georgia, serif" }}>Add a meal</div>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "#aaa", fontSize: 24, cursor: "pointer", lineHeight: 1 }}>×</button>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display: "flex", borderBottom: "1px solid #e8e4dc" }}>
+          {[["favourites", `❤️ Saved (${favourites.length})`], ["generate", "✦ Generate New"]].map(([t, label]) => (
+            <button key={t} onClick={() => setTab(t)} style={{ flex: 1, padding: "12px 0", background: "none", border: "none", borderBottom: `2px solid ${tab === t ? "#1e2d4a" : "transparent"}`, color: tab === t ? "#1e2d4a" : "#aaa", fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "sans-serif", transition: "all 0.15s" }}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ padding: 24 }}>
+          {/* Favourites tab */}
+          {tab === "favourites" && (
+            <>
+              {favourites.length === 0 ? (
+                <div style={{ textAlign: "center", color: "#aaa", padding: "32px 0", fontSize: 13, fontFamily: "sans-serif" }}>
+                  No saved favourites yet.<br />Generate a meal and tap ❤️ to save it.
+                </div>
+              ) : (
+                favourites.map(fav => (
+                  <div
+                    key={fav.savedAt}
+                    onClick={() => onAdd({ recipe: fav.recipe, flavor: fav.flavor, imageUrl: fav.imageUrl })}
+                    style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px", borderRadius: 6, border: "1px solid #e8e4dc", marginBottom: 10, cursor: "pointer", background: "#fafaf8", transition: "border-color 0.15s" }}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = "#1e2d4a"}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = "#e8e4dc"}
+                  >
+                    <img src={fav.imageUrl} alt={fav.recipe.name} style={{ width: 52, height: 52, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} onError={e => { e.target.src = getFallbackImage(fav.flavor); }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#1e2d4a", marginBottom: 5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "sans-serif" }}>{fav.recipe.name}</div>
+                      <div style={{ display: "flex", gap: 5 }}>
+                        <span style={{ fontSize: 10, background: "rgba(30,45,74,0.08)", color: "#1e2d4a", padding: "2px 7px", borderRadius: 10, fontFamily: "sans-serif", fontWeight: 700 }}>{fav.recipe.calories} cal</span>
+                        <span style={{ fontSize: 10, background: "rgba(201,168,76,0.12)", color: "#9a7a28", padding: "2px 7px", borderRadius: 10, fontFamily: "sans-serif", fontWeight: 700 }}>{fav.recipe.protein}g P</span>
+                      </div>
+                    </div>
+                    <span style={{ color: "#1e2d4a", fontSize: 20, fontWeight: 300 }}>+</span>
+                  </div>
+                ))
+              )}
+            </>
+          )}
+
+          {/* Generate tab */}
+          {tab === "generate" && (
+            <div>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#888", marginBottom: 7, letterSpacing: 1, textTransform: "uppercase", fontFamily: "sans-serif" }}>
+                  Calories — <span style={{ color: "#1e2d4a" }}>{calories} kcal</span>
+                </label>
+                <input type="range" min={300} max={900} value={calories} onChange={e => setCalories(+e.target.value)} style={{ width: "100%", accentColor: "#1e2d4a" }} />
               </div>
-            </div>
-            {error && <div style={{ color: "#ff6b6b", fontSize: 12, marginBottom: 10 }}>⚠️ {error}</div>}
-            {generated && (
-              <div style={{ background: "rgba(78,205,196,0.08)", border: "1px solid #4ecdc444", borderRadius: 12, padding: 14, marginBottom: 14 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                  <img src={generated.imageUrl} alt={generated.recipe.name} style={{ width: 50, height: 50, borderRadius: 8, objectFit: "cover" }} />
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{generated.recipe.name}</div>
-                    <div style={{ display: "flex", gap: 5, marginTop: 4 }}>
-                      <MacroPill value={generated.recipe.calories} unit="cal" color="#ff6b6b" />
-                      <MacroPill value={generated.recipe.protein} unit="g P" color="#4ecdc4" />
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#888", marginBottom: 7, letterSpacing: 1, textTransform: "uppercase", fontFamily: "sans-serif" }}>
+                  Protein — <span style={{ color: "#C9A84C" }}>{protein}g</span>
+                </label>
+                <input type="range" min={10} max={80} value={protein} onChange={e => setProtein(+e.target.value)} style={{ width: "100%", accentColor: "#C9A84C" }} />
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#888", marginBottom: 7, letterSpacing: 1, textTransform: "uppercase", fontFamily: "sans-serif" }}>Key Ingredient</label>
+                <input type="text" placeholder="e.g. salmon, tofu, chicken..." value={ingredient} onChange={e => setIngredient(e.target.value)} style={{ width: "100%", background: "#fff", border: "1px solid #e8e4dc", borderRadius: 4, padding: "11px 14px", color: "#1a1a1a", fontSize: 13, fontFamily: "sans-serif", outline: "none", boxSizing: "border-box" }} />
+              </div>
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#888", marginBottom: 8, letterSpacing: 1, textTransform: "uppercase", fontFamily: "sans-serif" }}>Flavour Profile</label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                  {FLAVOR_PROFILES.map(f => (
+                    <button key={f} onClick={() => setFlavor(f)} style={{ padding: "6px 13px", borderRadius: 20, fontSize: 11, cursor: "pointer", fontWeight: 600, background: flavor === f ? "#1e2d4a" : "#fff", color: flavor === f ? "#fff" : "#888", border: `1px solid ${flavor === f ? "#1e2d4a" : "#e8e4dc"}`, fontFamily: "sans-serif" }}>{f}</button>
+                  ))}
+                </div>
+              </div>
+
+              {error && <div style={{ color: "#c0392b", fontSize: 12, marginBottom: 12, fontFamily: "sans-serif" }}>⚠ {error}</div>}
+
+              {generated && (
+                <div style={{ background: "#fafaf8", border: "1px solid #e8e4dc", borderRadius: 6, padding: 14, marginBottom: 14 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                    <img src={generated.imageUrl} alt={generated.recipe.name} style={{ width: 48, height: 48, borderRadius: 6, objectFit: "cover" }} />
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#1e2d4a", fontFamily: "sans-serif" }}>{generated.recipe.name}</div>
+                      <div style={{ display: "flex", gap: 5, marginTop: 4 }}>
+                        <span style={{ fontSize: 10, background: "rgba(30,45,74,0.08)", color: "#1e2d4a", padding: "2px 7px", borderRadius: 10, fontFamily: "sans-serif", fontWeight: 700 }}>{generated.recipe.calories} cal</span>
+                        <span style={{ fontSize: 10, background: "rgba(201,168,76,0.12)", color: "#9a7a28", padding: "2px 7px", borderRadius: 10, fontFamily: "sans-serif", fontWeight: 700 }}>{generated.recipe.protein}g P</span>
+                      </div>
                     </div>
                   </div>
+                  <button onClick={() => onAdd(generated)} style={{ width: "100%", padding: "11px", borderRadius: 4, border: "none", background: "#1e2d4a", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", letterSpacing: 1.5, textTransform: "uppercase", fontFamily: "sans-serif" }}>
+                    Add to Planner
+                  </button>
                 </div>
-                <button
-                  onClick={() => onAdd(generated)}
-                  style={{ width: "100%", padding: "10px", borderRadius: 10, border: "none", background: "linear-gradient(135deg,#4ecdc4,#2bb5ad)", color: "#000", fontSize: 13, fontWeight: 800, cursor: "pointer" }}
-                >
-                  ✓ Add to Planner
-                </button>
-              </div>
-            )}
-            <button
-              onClick={handleGenerate}
-              disabled={generating}
-              style={{ width: "100%", padding: "13px", borderRadius: 12, border: "none", background: generating ? "#333" : "linear-gradient(135deg,#ff6b6b,#e05555)", color: generating ? "#666" : "#fff", fontSize: 14, fontWeight: 800, cursor: generating ? "not-allowed" : "pointer" }}
-            >
-              {generating ? "✨ Generating..." : "✨ Generate Meal"}
-            </button>
-          </div>
-        )}
+              )}
+
+              <button onClick={handleGenerate} disabled={generating} style={{ width: "100%", padding: "13px", borderRadius: 4, border: "1px solid #C9A84C", background: "transparent", color: generating ? "#ccc" : "#C9A84C", fontSize: 12, fontWeight: 700, cursor: generating ? "not-allowed" : "pointer", letterSpacing: 1.5, textTransform: "uppercase", fontFamily: "sans-serif" }}>
+                {generating ? "Generating..." : "✦ Generate Meal"}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -252,105 +241,89 @@ function downloadPDF(weekDates, plannerSlots, weekOffset) {
   const colW = (pageW - margin * 2 - 22) / 7;
   const rowH = 24;
 
-  // Title
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.setTextColor(30, 30, 60);
-  doc.text("Weekly Meal Plan", margin, 14);
+  doc.setTextColor(30, 45, 74);
+  doc.text("hercoach.Jess — Weekly Meal Plan", margin, 14);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.setTextColor(100, 100, 120);
+  doc.setTextColor(150, 130, 80);
   const label = `${weekOffset === 0 ? "This Week · " : ""}${formatWeekLabel(weekDates)}`;
   doc.text(label, margin, 21);
 
   const startY = 30;
 
-  // Day headers
-  doc.setFillColor(240, 245, 255);
+  doc.setFillColor(245, 243, 238);
   doc.rect(margin + 22, startY, colW * 7, 9, "F");
   DAYS.forEach((day, i) => {
     const x = margin + 22 + i * colW + colW / 2;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
-    doc.setTextColor(60, 60, 120);
+    doc.setTextColor(30, 45, 74);
     doc.text(day, x, startY + 4, { align: "center" });
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
-    doc.setTextColor(130, 130, 160);
+    doc.setTextColor(150, 130, 80);
     doc.text(weekDates[i].slice(5), x, startY + 8, { align: "center" });
   });
 
-  // Meal rows
   MEAL_TYPES.forEach((mealType, rowIdx) => {
     const y = startY + 9 + rowIdx * rowH;
-
-    // Alternating row background
     if (rowIdx % 2 === 0) {
-      doc.setFillColor(250, 250, 255);
+      doc.setFillColor(252, 251, 249);
       doc.rect(margin, y, pageW - margin * 2, rowH, "F");
     }
-
-    // Meal type label
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.setTextColor(80, 80, 120);
+    doc.setTextColor(30, 45, 74);
     doc.text(mealType, margin + 2, y + rowH / 2 + 1);
 
     weekDates.forEach((dateKey, colIdx) => {
       const slotData = plannerSlots[`${dateKey}_${mealType}`];
       const x = margin + 22 + colIdx * colW;
-
-      // Cell border
-      doc.setDrawColor(220, 220, 240);
+      doc.setDrawColor(232, 228, 220);
       doc.setLineWidth(0.3);
       doc.rect(x, y, colW, rowH);
-
       if (slotData) {
-        // Meal name
         doc.setFont("helvetica", "bold");
         doc.setFontSize(7);
-        doc.setTextColor(30, 30, 60);
+        doc.setTextColor(30, 45, 74);
         const name = doc.splitTextToSize(slotData.recipe.name, colW - 4);
         doc.text(name.slice(0, 2), x + 2, y + 5);
-
-        // Macros
         doc.setFont("helvetica", "normal");
         doc.setFontSize(6);
-        doc.setTextColor(160, 80, 80);
+        doc.setTextColor(30, 45, 74);
         doc.text(`${slotData.recipe.calories} cal`, x + 2, y + rowH - 8);
-        doc.setTextColor(60, 140, 130);
+        doc.setTextColor(150, 130, 80);
         doc.text(`${slotData.recipe.protein}g P`, x + 2, y + rowH - 3);
       }
     });
   });
 
-  // Daily totals row
   const totalsY = startY + 9 + MEAL_TYPES.length * rowH;
-  doc.setFillColor(230, 240, 255);
+  doc.setFillColor(240, 237, 230);
   doc.rect(margin, totalsY, pageW - margin * 2, 10, "F");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7);
-  doc.setTextColor(60, 60, 120);
+  doc.setTextColor(30, 45, 74);
   doc.text("Daily Total", margin + 2, totalsY + 7);
-
   weekDates.forEach((dateKey, colIdx) => {
     const daySlots = MEAL_TYPES.map(m => plannerSlots[`${dateKey}_${m}`]).filter(Boolean);
-    if (daySlots.length === 0) return;
+    if (!daySlots.length) return;
     const x = margin + 22 + colIdx * colW;
     const cal = daySlots.reduce((s, sl) => s + (sl.recipe.calories || 0), 0);
     const pro = daySlots.reduce((s, sl) => s + (sl.recipe.protein || 0), 0);
-    doc.setTextColor(160, 80, 80);
+    doc.setTextColor(30, 45, 74);
     doc.text(`${cal} cal`, x + 2, totalsY + 5);
-    doc.setTextColor(60, 140, 130);
+    doc.setTextColor(150, 130, 80);
     doc.text(`${pro}g P`, x + 2, totalsY + 9);
   });
 
-  // Footer
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
-  doc.setTextColor(180, 180, 200);
-  doc.text("Generated by Macro Meal Generator", margin, pageH - 6);
+  doc.setTextColor(180, 180, 180);
+  doc.text("Generated by hercoach.Jess", margin, pageH - 6);
   doc.text(new Date().toLocaleDateString("en-GB"), pageW - margin, pageH - 6, { align: "right" });
 
   doc.save(`meal-plan-${weekDates[0]}.pdf`);
@@ -406,62 +379,83 @@ export default function PlannerPage() {
     });
   }
 
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
+
   return (
-    <div style={{ minHeight: "100vh", background: "radial-gradient(ellipse at top left,#0f0c29,#302b63,#24243e)", padding: "0 0 60px" }}>
-      {/* Header */}
-      <div style={{ textAlign: "center", padding: "40px 20px 24px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: 400, margin: "0 auto 16px", padding: "0 4px" }}>
-          <Link href="/generator" style={{ color: "#4ecdc4", fontSize: 13, fontWeight: 600, textDecoration: "none", opacity: 0.8 }}>
-            ← Back to Generator
-          </Link>
+    <div style={{ minHeight: "100vh", background: "#fafaf8", fontFamily: "Georgia, serif" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet" />
+      <style>{`
+        * { box-sizing: border-box; }
+        @media (max-width: 768px) {
+          .planner-nav { padding: 16px 20px !important; }
+          .planner-nav-links { display: none !important; }
+          .planner-header { padding: 28px 16px 16px !important; }
+        }
+      `}</style>
+
+      {/* Nav */}
+      <nav className="planner-nav" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 48px", borderBottom: "1px solid #e8e4dc", background: "#fff", position: "sticky", top: 0, zIndex: 50 }}>
+        <Link href="/" style={{ fontSize: 20, color: "#1e2d4a", lineHeight: 1, textDecoration: "none" }}>
+          <span style={{ fontStyle: "italic", fontWeight: 300 }}>her</span>
+          <span style={{ fontWeight: 800 }}>coach.</span>
+          <span style={{ color: "#C9A84C", fontFamily: "'Great Vibes', cursive", fontWeight: 400, fontSize: 16, marginLeft: 1, verticalAlign: "middle" }}>Jess</span>
+        </Link>
+        <div className="planner-nav-links" style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <Link href="/generator" style={{ fontSize: 12, color: "#555", fontFamily: "sans-serif", textDecoration: "none", letterSpacing: 0.5 }}>← Generator</Link>
+          <Link href="/profile" style={{ fontSize: 12, color: "#555", fontFamily: "sans-serif", textDecoration: "none", letterSpacing: 0.5 }}>Your Macros</Link>
           {user && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ color: "#888", fontSize: 11 }}>{user.email}</span>
-              <button
-                onClick={async () => {
-                  const supabase = createClient();
-                  await supabase.auth.signOut();
-                  router.push("/login");
-                  router.refresh();
-                }}
-                style={{ background: "none", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, color: "#666", fontSize: 11, padding: "4px 10px", cursor: "pointer", fontWeight: 600 }}
-              >Sign out</button>
-            </div>
+            <>
+              <span style={{ fontSize: 12, color: "#bbb", fontFamily: "sans-serif" }}>{user.email}</span>
+              <button onClick={handleSignOut} style={{ padding: "8px 16px", background: "transparent", color: "#1e2d4a", border: "1px solid #e8e4dc", borderRadius: 4, fontSize: 11, fontWeight: 700, cursor: "pointer", letterSpacing: 1, textTransform: "uppercase", fontFamily: "sans-serif" }}>
+                Sign Out
+              </button>
+            </>
           )}
         </div>
-        <div style={{ fontSize: 12, color: "#ff6b6b", letterSpacing: 2, textTransform: "uppercase", fontWeight: 800, marginBottom: 4, fontFamily: "Georgia, serif" }}>HerCoachJess</div>
-        <h1 style={{ fontSize: "clamp(24px,4vw,40px)", fontFamily: "Georgia, serif", color: "#fff", margin: 0, lineHeight: 1.1 }}>
-          Weekly Meal <span style={{ color: "#4ecdc4" }}>Planner</span>
+      </nav>
+
+      {/* Header */}
+      <div className="planner-header" style={{ textAlign: "center", padding: "40px 48px 28px" }}>
+        <div style={{ fontSize: 11, color: "#C9A84C", letterSpacing: 4, textTransform: "uppercase", marginBottom: 12, fontFamily: "sans-serif", fontWeight: 700 }}>Meal Planning</div>
+        <h1 style={{ fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 400, color: "#1a1a1a", margin: "0 0 24px", lineHeight: 1.1 }}>
+          Weekly Meal <span style={{ color: "#C9A84C", fontStyle: "italic" }}>Planner</span>
         </h1>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginTop: 16 }}>
-          <button onClick={() => changeWeek(-1)} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", color: "#fff", borderRadius: 10, padding: "7px 14px", cursor: "pointer", fontSize: 14, fontWeight: 700 }}>‹</button>
-          <span style={{ color: "#ccc", fontSize: 14, fontWeight: 600, minWidth: 160, textAlign: "center" }}>
-            {weekOffset === 0 ? "This Week" : weekOffset === 1 ? "Next Week" : weekOffset === -1 ? "Last Week" : `Week of`} {formatWeekLabel(weekDates)}
+
+        {/* Week navigation */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 20 }}>
+          <button onClick={() => changeWeek(-1)} style={{ background: "#fff", border: "1px solid #e8e4dc", color: "#1e2d4a", borderRadius: 4, width: 36, height: 36, cursor: "pointer", fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>‹</button>
+          <span style={{ color: "#555", fontSize: 14, fontFamily: "sans-serif", minWidth: 180, textAlign: "center" }}>
+            {weekOffset === 0 ? "This Week · " : weekOffset === 1 ? "Next Week · " : weekOffset === -1 ? "Last Week · " : ""}{formatWeekLabel(weekDates)}
           </span>
-          <button onClick={() => changeWeek(1)} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", color: "#fff", borderRadius: 10, padding: "7px 14px", cursor: "pointer", fontSize: 14, fontWeight: 700 }}>›</button>
+          <button onClick={() => changeWeek(1)} style={{ background: "#fff", border: "1px solid #e8e4dc", color: "#1e2d4a", borderRadius: 4, width: 36, height: 36, cursor: "pointer", fontSize: 16, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>›</button>
         </div>
-        <div style={{ marginTop: 14 }}>
-          <button
-            onClick={() => downloadPDF(weekDates, plannerSlots, weekOffset)}
-            style={{ padding: "9px 22px", borderRadius: 20, border: "1px solid rgba(255,107,107,0.4)", background: "rgba(255,107,107,0.08)", color: "#ff6b6b", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
-          >
-            ⬇ Download PDF
-          </button>
-        </div>
+
+        <button
+          onClick={() => downloadPDF(weekDates, plannerSlots, weekOffset)}
+          style={{ padding: "10px 24px", borderRadius: 4, border: "1px solid #1e2d4a", background: "transparent", color: "#1e2d4a", fontSize: 11, fontWeight: 700, cursor: "pointer", letterSpacing: 1.5, textTransform: "uppercase", fontFamily: "sans-serif" }}
+        >
+          ↓ Download PDF
+        </button>
       </div>
 
-      {/* Grid — horizontal scroll on mobile */}
-      <div style={{ overflowX: "auto", padding: "0 16px" }}>
-        <div style={{ minWidth: 560, maxWidth: 900, margin: "0 auto" }}>
+      {/* Grid */}
+      <div style={{ overflowX: "auto", padding: "0 24px 16px" }}>
+        <div style={{ minWidth: 600, maxWidth: 1000, margin: "0 auto" }}>
+
           {/* Day headers */}
-          <div style={{ display: "grid", gridTemplateColumns: "80px repeat(7, 1fr)", gap: 6, marginBottom: 6 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "72px repeat(7, 1fr)", gap: 6, marginBottom: 6 }}>
             <div />
             {weekDates.map((date, i) => {
               const isToday = date === new Date().toISOString().slice(0, 10);
               return (
-                <div key={date} style={{ textAlign: "center", padding: "8px 4px" }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: isToday ? "#4ecdc4" : "#888", textTransform: "uppercase", letterSpacing: 1 }}>{DAYS[i]}</div>
-                  <div style={{ fontSize: 11, color: isToday ? "#4ecdc4" : "#555", marginTop: 2 }}>{date.slice(5)}</div>
+                <div key={date} style={{ textAlign: "center", padding: "8px 4px", background: isToday ? "rgba(201,168,76,0.08)" : "transparent", borderRadius: 4 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: isToday ? "#C9A84C" : "#1e2d4a", textTransform: "uppercase", letterSpacing: 1, fontFamily: "sans-serif" }}>{DAYS[i]}</div>
+                  <div style={{ fontSize: 10, color: isToday ? "#C9A84C" : "#aaa", marginTop: 2, fontFamily: "sans-serif" }}>{date.slice(5)}</div>
                 </div>
               );
             })}
@@ -469,9 +463,9 @@ export default function PlannerPage() {
 
           {/* Meal rows */}
           {MEAL_TYPES.map(mealType => (
-            <div key={mealType} style={{ display: "grid", gridTemplateColumns: "80px repeat(7, 1fr)", gap: 6, marginBottom: 6 }}>
+            <div key={mealType} style={{ display: "grid", gridTemplateColumns: "72px repeat(7, 1fr)", gap: 6, marginBottom: 6 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 10 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#666", textTransform: "uppercase", letterSpacing: 1 }}>{mealType}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: "#aaa", textTransform: "uppercase", letterSpacing: 1, fontFamily: "sans-serif" }}>{mealType}</span>
               </div>
               {weekDates.map(dateKey => {
                 const slotKey = `${dateKey}_${mealType}`;
@@ -488,31 +482,37 @@ export default function PlannerPage() {
               })}
             </div>
           ))}
-        </div>
-      </div>
 
-      {/* Totals row */}
-      <div style={{ overflowX: "auto", padding: "8px 16px 0" }}>
-        <div style={{ minWidth: 560, maxWidth: 900, margin: "0 auto" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "80px repeat(7, 1fr)", gap: 6 }}>
+          {/* Daily totals */}
+          <div style={{ display: "grid", gridTemplateColumns: "72px repeat(7, 1fr)", gap: 6, marginTop: 4, borderTop: "1px solid #e8e4dc", paddingTop: 8 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 10 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: "#555", textTransform: "uppercase", letterSpacing: 1 }}>Total</span>
+              <span style={{ fontSize: 9, fontWeight: 700, color: "#aaa", textTransform: "uppercase", letterSpacing: 1, fontFamily: "sans-serif" }}>Total</span>
             </div>
             {weekDates.map(dateKey => {
               const daySlots = MEAL_TYPES.map(m => plannerSlots[`${dateKey}_${m}`]).filter(Boolean);
               const totalCal = daySlots.reduce((s, sl) => s + (sl.recipe.calories || 0), 0);
               const totalPro = daySlots.reduce((s, sl) => s + (sl.recipe.protein || 0), 0);
-              if (daySlots.length === 0) return <div key={dateKey} />;
+              if (!daySlots.length) return <div key={dateKey} />;
               return (
                 <div key={dateKey} style={{ padding: "6px 4px", textAlign: "center" }}>
-                  <div style={{ fontSize: 10, color: "#ff6b6b", fontWeight: 700 }}>{totalCal} cal</div>
-                  <div style={{ fontSize: 10, color: "#4ecdc4", fontWeight: 700 }}>{totalPro}g P</div>
+                  <div style={{ fontSize: 10, color: "#1e2d4a", fontWeight: 700, fontFamily: "sans-serif" }}>{totalCal} cal</div>
+                  <div style={{ fontSize: 10, color: "#C9A84C", fontWeight: 700, fontFamily: "sans-serif" }}>{totalPro}g P</div>
                 </div>
               );
             })}
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer style={{ background: "#fff", borderTop: "1px solid #e8e4dc", padding: "28px 48px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginTop: 40 }}>
+        <Link href="/" style={{ fontSize: 18, color: "#1e2d4a", lineHeight: 1, textDecoration: "none" }}>
+          <span style={{ fontStyle: "italic", fontWeight: 300 }}>her</span>
+          <span style={{ fontWeight: 800 }}>coach.</span>
+          <span style={{ color: "#C9A84C", fontFamily: "'Great Vibes', cursive", fontWeight: 400, fontSize: 16, marginLeft: 1, verticalAlign: "middle" }}>Jess</span>
+        </Link>
+        <div style={{ fontSize: 12, color: "#bbb", fontFamily: "sans-serif" }}>© 2026 HerCoachJess. All rights reserved.</div>
+      </footer>
 
       {modalTarget && (
         <AddMealModal
