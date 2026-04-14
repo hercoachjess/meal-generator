@@ -20,14 +20,55 @@ function matchesMacros(meal, targets) {
   return within(meal.calories, targets.calories) && within(meal.protein, targets.protein);
 }
 
-async function callClaudeAPI(calories, protein, ingredient, flavorProfile) {
+async function callClaudeAPI(calories, protein, ingredient, flavorProfile, options = {}) {
   const response = await fetch("/api/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ calories, protein, ingredient, flavorProfile }),
+    body: JSON.stringify({ calories, protein, ingredient, flavorProfile, ...options }),
   });
   const data = await response.json();
   return data.recipe;
+}
+
+// ── Repeat meal protection ───────────────────────────────────────────────────
+function trackRecentMeal(name) {
+  try {
+    const recent = JSON.parse(localStorage.getItem("recentMeals") || "[]");
+    const updated = [name, ...recent.filter(n => n !== name)].slice(0, 14);
+    localStorage.setItem("recentMeals", JSON.stringify(updated));
+  } catch { /* ignore */ }
+}
+function getAvoidList() {
+  try { return JSON.parse(localStorage.getItem("recentMeals") || "[]").slice(0, 6); }
+  catch { return []; }
+}
+
+// ── Streak calculator ────────────────────────────────────────────────────────
+function calcStreak() {
+  try {
+    const slots = JSON.parse(localStorage.getItem("weeklyPlanner") || "{}").slots || {};
+    let streak = 0;
+    const d = new Date();
+    for (let i = 0; i < 60; i++) {
+      const dateStr = d.toISOString().slice(0, 10);
+      const has = ["Breakfast", "Lunch", "Dinner"].some(m => slots[`${dateStr}_${m}`]);
+      if (!has) break;
+      streak++;
+      d.setDate(d.getDate() - 1);
+    }
+    return streak;
+  } catch { return 0; }
+}
+
+// ── Ingredient amount scaling ────────────────────────────────────────────────
+function scaleAmount(amount, factor) {
+  if (factor === 1) return amount;
+  const match = String(amount).match(/^(\d+\.?\d*)\s*(.*)/);
+  if (!match) return amount;
+  const num = parseFloat(match[1]) * factor;
+  const unit = match[2];
+  const rounded = Number.isInteger(num) ? num : parseFloat(num.toFixed(1));
+  return `${rounded}${unit ? " " + unit : ""}`;
 }
 
 async function fetchGoogleImage(recipeName, flavor) {
@@ -239,6 +280,7 @@ function MacrosPanel({ profile }) {
 // ── Recipe Card ─────────────────────────────────────────────────────────────
 function RecipeCard({ recipe, flavor, imageUrl, isFavourite, onToggleFavourite, compact = false }) {
   const [expanded, setExpanded] = useState(false);
+  const [servings, setServings] = useState(1);
   return (
     <div style={{ background: "#fff", borderRadius: 8, overflow: "hidden", border: "1px solid #e8e4dc", boxShadow: "0 4px 24px rgba(0,0,0,0.06)", marginBottom: 20 }}>
       <div style={{ position: "relative", height: compact ? 150 : 200, overflow: "hidden" }}>
@@ -268,12 +310,22 @@ function RecipeCard({ recipe, flavor, imageUrl, isFavourite, onToggleFavourite, 
         <div style={{ padding: "0 18px 18px", borderTop: "1px solid #f0ece4" }}>
           {recipe.ingredients && (
             <div style={{ marginTop: 14, marginBottom: 14 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#C9A84C", marginBottom: 8, textTransform: "uppercase", letterSpacing: 1.5, fontFamily: "sans-serif" }}>Ingredients</div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "#C9A84C", textTransform: "uppercase", letterSpacing: 1.5, fontFamily: "sans-serif" }}>Ingredients</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 10, color: "#aaa", fontFamily: "sans-serif" }}>Serves</span>
+                  {[1, 2, 4].map(s => (
+                    <button key={s} onClick={() => setServings(s)} style={{ width: 26, height: 26, borderRadius: "50%", border: `1px solid ${servings === s ? "#1e2d4a" : "#e8e4dc"}`, background: servings === s ? "#1e2d4a" : "#fff", color: servings === s ? "#fff" : "#888", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "sans-serif" }}>{s}</button>
+                  ))}
+                </div>
+              </div>
               {Array.isArray(recipe.ingredients) ? recipe.ingredients.map((ing, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #f0ece4", fontSize: 13, color: "#444", fontFamily: "sans-serif" }}>
-                  <span>{ing.item}</span><span style={{ color: "#aaa" }}>{ing.amount}</span>
+                  <span>{ing.item}</span>
+                  <span style={{ color: servings > 1 ? "#C9A84C" : "#aaa", fontWeight: servings > 1 ? 700 : 400 }}>{scaleAmount(ing.amount, servings)}</span>
                 </div>
               )) : <div style={{ color: "#555", fontSize: 13, fontFamily: "sans-serif" }}>{recipe.ingredients}</div>}
+              {servings > 1 && <div style={{ marginTop: 8, fontSize: 11, color: "#C9A84C", fontFamily: "sans-serif" }}>Amounts scaled for {servings} servings</div>}
             </div>
           )}
           {recipe.steps && (
@@ -294,7 +346,7 @@ function RecipeCard({ recipe, flavor, imageUrl, isFavourite, onToggleFavourite, 
 }
 
 // ── Tab: Generate Meal ───────────────────────────────────────────────────────
-function GenerateTab({ profile, favourites, setFavourites }) {
+function GenerateTab({ profile, favourites, setFavourites, genOptions }) {
   const [calories, setCalories] = useState(profile?.calories || 550);
   const [protein, setProtein] = useState(profile?.protein || 40);
   const [ingredient, setIngredient] = useState("");
@@ -331,7 +383,12 @@ function GenerateTab({ profile, favourites, setFavourites }) {
         }
       }
       setPath("AI");
-      const recipe = await callClaudeAPI(calories, protein, ingredient || "chicken", flavor);
+      const recipe = await callClaudeAPI(calories, protein, ingredient || "chicken", flavor, {
+        dietaryPrefs: genOptions?.dietaryPrefs,
+        allergens: genOptions?.allergens,
+        avoidMeals: getAvoidList(),
+      });
+      trackRecentMeal(recipe.name);
       setRecipes([recipe]);
       setImageUrls({ 0: await fetchGoogleImage(recipe.name, flavor) });
     } catch { setError("Something went wrong. Please try again."); }
@@ -432,7 +489,7 @@ function SplitEditor({ splits, setSplits }) {
 }
 
 // ── Tab: Day Plan ────────────────────────────────────────────────────────────
-function DayPlanTab({ profile, favourites, setFavourites }) {
+function DayPlanTab({ profile, favourites, setFavourites, genOptions }) {
   const [loading, setLoading] = useState(false);
   const [dayMeals, setDayMeals] = useState({ Breakfast: null, Lunch: null, Dinner: null });
   const [imageUrls, setImageUrls] = useState({});
@@ -459,10 +516,16 @@ function DayPlanTab({ profile, favourites, setFavourites }) {
     setError(null); setLoading(true); setDayMeals({ Breakfast: null, Lunch: null, Dinner: null }); setImageUrls({});
     try {
       const ingredients = { Breakfast: "oats or eggs", Lunch: "chicken or tuna", Dinner: "salmon or beef" };
+      const avoidMeals = getAvoidList();
       const results = await Promise.all(MEAL_SLOTS.map(async m => {
         const cal = Math.round(totalCal * (splits[m] / 100));
         const pro = Math.round(totalPro * (splits[m] / 100));
-        const recipe = await callClaudeAPI(cal, pro, ingredients[m], m === "Breakfast" ? "High Protein" : "Mediterranean");
+        const recipe = await callClaudeAPI(cal, pro, ingredients[m], m === "Breakfast" ? "High Protein" : "Mediterranean", {
+          dietaryPrefs: genOptions?.dietaryPrefs,
+          allergens: genOptions?.allergens,
+          avoidMeals,
+        });
+        trackRecentMeal(recipe.name);
         const imageUrl = await fetchGoogleImage(recipe.name, "High Protein");
         return { meal: m, recipe, imageUrl };
       }));
@@ -771,6 +834,8 @@ function Nav({ user, onSignOut }) {
       </Link>
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
         <Link href="/planner" style={{ fontSize: 12, color: "#555", fontFamily: "sans-serif", textDecoration: "none", letterSpacing: 0.5 }}>Weekly Planner</Link>
+        <Link href="/tracker" style={{ fontSize: 12, color: "#555", fontFamily: "sans-serif", textDecoration: "none", letterSpacing: 0.5 }}>Tracker</Link>
+        <Link href="/progress" style={{ fontSize: 12, color: "#555", fontFamily: "sans-serif", textDecoration: "none", letterSpacing: 0.5 }}>Progress</Link>
         <Link href="/profile" style={{ fontSize: 12, color: "#555", fontFamily: "sans-serif", textDecoration: "none", letterSpacing: 0.5 }}>Your Macros</Link>
         {user && (
           <>
@@ -805,7 +870,7 @@ export default function GeneratorPage() {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       setUser(user);
       if (user) {
-        const { data } = await supabase.from("profiles").select("calories,protein,carbs,fat,goal,goals_text,wellness_notes").eq("user_id", user.id).single();
+        const { data } = await supabase.from("profiles").select("calories,protein,carbs,fat,goal,goals_text,wellness_notes,dietary_pref,allergens_list").eq("user_id", user.id).single();
         if (data) setProfile(data);
       }
     });
@@ -819,6 +884,10 @@ export default function GeneratorPage() {
   }
 
   const showSidebar = activeTab === "generate" || activeTab === "dayplan";
+  const genOptions = {
+    dietaryPrefs: profile?.dietary_pref ? profile.dietary_pref.split(",").filter(Boolean) : [],
+    allergens: profile?.allergens_list ? profile.allergens_list.split(",").filter(Boolean) : [],
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: "#fafaf8", fontFamily: "Georgia, serif" }}>
@@ -845,6 +914,17 @@ export default function GeneratorPage() {
         <h1 style={{ fontSize: "clamp(26px,5vw,42px)", fontWeight: 400, color: "#1a1a1a", margin: 0, lineHeight: 1.15 }}>
           Macro Meal <span style={{ color: "#C9A84C", fontStyle: "italic" }}>Generator</span>
         </h1>
+        {/* Streak + quick links */}
+        {(() => { const streak = calcStreak(); return streak >= 2 ? (
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 14, background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 20, padding: "5px 14px" }}>
+            <span style={{ fontSize: 14 }}>🔥</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#9a7a28", fontFamily: "sans-serif" }}>{streak} day streak — keep it up!</span>
+          </div>
+        ) : null; })()}
+        <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 14 }}>
+          <Link href="/tracker" style={{ fontSize: 11, color: "#aaa", fontFamily: "sans-serif", textDecoration: "none", letterSpacing: 0.5 }}>📊 Daily Tracker</Link>
+          <Link href="/progress" style={{ fontSize: 11, color: "#aaa", fontFamily: "sans-serif", textDecoration: "none", letterSpacing: 0.5 }}>📈 Progress Log</Link>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -861,8 +941,8 @@ export default function GeneratorPage() {
       {/* Body: main + sidebar */}
       <div style={{ maxWidth: 1000, margin: "0 auto", padding: "32px 24px 80px", display: "flex", gap: 28, alignItems: "flex-start" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          {activeTab === "generate" && <GenerateTab profile={profile} favourites={favourites} setFavourites={setFavourites} />}
-          {activeTab === "dayplan" && <DayPlanTab profile={profile} favourites={favourites} setFavourites={setFavourites} />}
+          {activeTab === "generate" && <GenerateTab profile={profile} favourites={favourites} setFavourites={setFavourites} genOptions={genOptions} />}
+          {activeTab === "dayplan" && <DayPlanTab profile={profile} favourites={favourites} setFavourites={setFavourites} genOptions={genOptions} />}
           {activeTab === "planner" && <DayPlannerTab favourites={favourites} />}
           {activeTab === "favourites" && <FavouritesTab favourites={favourites} setFavourites={setFavourites} />}
           {activeTab === "goals" && <GoalsTab user={user} />}
