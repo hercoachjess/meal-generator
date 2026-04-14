@@ -1,42 +1,25 @@
-import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 
-export async function proxy(request) {
-  let supabaseResponse = NextResponse.next({ request });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  const { data: { user } } = await supabase.auth.getUser();
+export function proxy(request) {
   const { pathname } = request.nextUrl;
 
-  if (!user && pathname !== "/login") {
+  // Check for Supabase session cookies (either format)
+  const projectRef = "ownmulrkykbbcnytuozi";
+  const hasSession =
+    request.cookies.has(`sb-${projectRef}-auth-token`) ||
+    request.cookies.has("sb-access-token") ||
+    request.cookies.has(`sb-${projectRef}-auth-token.0`) ||
+    request.cookies.has("supabase-auth-token");
+
+  if (!hasSession && pathname !== "/login") {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  if (user && pathname === "/login") {
+  if (hasSession && pathname === "/login") {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  return supabaseResponse;
+  return NextResponse.next();
 }
 
 export const config = {
