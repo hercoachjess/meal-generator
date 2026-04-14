@@ -6,6 +6,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "../../lib/supabase/client";
 
+const DIETARY_OPTIONS = ["Omnivore", "Vegetarian", "Vegan", "Pescatarian", "Keto", "Paleo", "Gluten-Free", "Dairy-Free", "High Protein"];
+const ALLERGEN_OPTIONS = ["Nuts", "Peanuts", "Dairy", "Eggs", "Gluten", "Soy", "Shellfish", "Fish", "Wheat"];
+
 const ACTIVITY_OPTIONS = [
   { value: "sedentary", label: "Sedentary — little/no exercise", multiplier: 1.2 },
   { value: "lightly_active", label: "Lightly Active — 1-3 days/week", multiplier: 1.375 },
@@ -84,6 +87,8 @@ export default function ProfilePage() {
   const [weight_kg, setWeightKg] = useState("");
   const [activity_level, setActivityLevel] = useState("moderately_active");
   const [goal, setGoal] = useState("maintain");
+  const [dietaryPrefs, setDietaryPrefs] = useState([]);
+  const [allergensList, setAllergensList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState(null);
@@ -103,7 +108,7 @@ export default function ProfilePage() {
         }
         const { data: profile } = await supabase
           .from("profiles")
-          .select("name, gender, age, height_cm, weight_kg, activity_level, goal")
+          .select("name, gender, age, height_cm, weight_kg, activity_level, goal, dietary_pref, allergens_list")
           .eq("user_id", user.id)
           .single();
 
@@ -115,6 +120,8 @@ export default function ProfilePage() {
           if (profile.weight_kg) setWeightKg(String(profile.weight_kg));
           if (profile.activity_level) setActivityLevel(profile.activity_level);
           if (profile.goal) setGoal(profile.goal);
+          if (profile.dietary_pref) setDietaryPrefs(profile.dietary_pref.split(",").filter(Boolean));
+          if (profile.allergens_list) setAllergensList(profile.allergens_list.split(",").filter(Boolean));
         }
       } catch (err) {
         console.error("Error loading profile:", err);
@@ -154,6 +161,8 @@ export default function ProfilePage() {
           protein: macros.protein,
           carbs: macros.carbs,
           fat: macros.fat,
+          dietary_pref: dietaryPrefs.join(","),
+          allergens_list: allergensList.join(","),
           onboarding_completed: true,
           updated_at: new Date().toISOString(),
         }, { onConflict: "user_id" });
@@ -338,6 +347,43 @@ export default function ProfilePage() {
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
+            </div>
+
+            {/* Dietary preferences */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={labelStyle}>Dietary Style <span style={{ fontWeight: 400, color: "#bbb" }}>(select all that apply)</span></label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                {DIETARY_OPTIONS.map(opt => {
+                  const active = dietaryPrefs.includes(opt);
+                  return (
+                    <button key={opt} type="button" onClick={() => setDietaryPrefs(prev => active ? prev.filter(x => x !== opt) : [...prev, opt])}
+                      style={{ padding: "7px 13px", borderRadius: 20, fontSize: 12, cursor: "pointer", fontWeight: 600, fontFamily: "sans-serif", border: `1px solid ${active ? "#1e2d4a" : "#e8e4dc"}`, background: active ? "#1e2d4a" : "#fff", color: active ? "#fff" : "#888", transition: "all 0.15s" }}>
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Allergens */}
+            <div style={{ marginBottom: 28 }}>
+              <label style={labelStyle}>Allergens to Avoid <span style={{ fontWeight: 400, color: "#bbb" }}>(select all that apply)</span></label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                {ALLERGEN_OPTIONS.map(opt => {
+                  const active = allergensList.includes(opt);
+                  return (
+                    <button key={opt} type="button" onClick={() => setAllergensList(prev => active ? prev.filter(x => x !== opt) : [...prev, opt])}
+                      style={{ padding: "7px 13px", borderRadius: 20, fontSize: 12, cursor: "pointer", fontWeight: 600, fontFamily: "sans-serif", border: `1px solid ${active ? "#c0392b" : "#e8e4dc"}`, background: active ? "rgba(192,57,43,0.08)" : "#fff", color: active ? "#c0392b" : "#888", transition: "all 0.15s" }}>
+                      {active ? "✕ " : ""}{opt}
+                    </button>
+                  );
+                })}
+              </div>
+              {allergensList.length > 0 && (
+                <div style={{ marginTop: 10, fontSize: 12, color: "#c0392b", fontFamily: "sans-serif" }}>
+                  ⚠ These will be excluded from all AI-generated meals
+                </div>
+              )}
             </div>
 
             {/* Live preview */}
