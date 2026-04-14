@@ -45,14 +45,12 @@ function getFallbackImage(flavor) {
   return `https://picsum.photos/seed/${seed}/800/500`;
 }
 
-function MacroRing({ label, value, unit, color }) {
+function MacroBar({ label, value, unit, color }) {
   return (
-    <div style={{ textAlign: "center" }}>
-      <div style={{ width: 68, height: 68, borderRadius: "50%", border: `3px solid ${color}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: `${color}18`, margin: "0 auto 6px", boxShadow: `0 0 14px ${color}40` }}>
-        <span style={{ fontSize: 17, fontWeight: 800, color, fontFamily: "Georgia, serif" }}>{value}</span>
-      </div>
-      <div style={{ fontSize: 11, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>{label}</div>
-      <div style={{ fontSize: 10, color: "#555" }}>{unit}</div>
+    <div style={{ textAlign: "center", flex: 1 }}>
+      <div style={{ fontSize: 20, fontWeight: 700, color, fontFamily: "Georgia, serif", lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 10, color: "#aaa", textTransform: "uppercase", letterSpacing: 1, marginTop: 4, fontFamily: "sans-serif" }}>{label}</div>
+      <div style={{ fontSize: 10, color: "#ccc", fontFamily: "sans-serif" }}>{unit}</div>
     </div>
   );
 }
@@ -60,53 +58,59 @@ function MacroRing({ label, value, unit, color }) {
 function RecipeCard({ recipe, flavor, imageUrl, isFavourite, onToggleFavourite }) {
   const [expanded, setExpanded] = useState(false);
   return (
-    <div style={{ background: "linear-gradient(160deg,#1a1a2e,#16213e)", borderRadius: 20, overflow: "hidden", border: "1px solid #2a2a4a", boxShadow: "0 20px 60px rgba(0,0,0,0.5)", marginBottom: 24 }}>
-      <div style={{ position: "relative", height: 220, overflow: "hidden" }}>
-        <img src={imageUrl} alt={recipe.name} style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.7)" }} onError={e => { e.target.src = getFallbackImage(flavor); }} />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top,#1a1a2e,transparent 60%)" }} />
+    <div style={{ background: "#fff", borderRadius: 8, overflow: "hidden", border: "1px solid #e8e4dc", boxShadow: "0 4px 24px rgba(0,0,0,0.06)", marginBottom: 20 }}>
+      {/* Image */}
+      <div style={{ position: "relative", height: 200, overflow: "hidden" }}>
+        <img src={imageUrl} alt={recipe.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { e.target.src = getFallbackImage(flavor); }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 60%)" }} />
         <button
           onClick={() => onToggleFavourite(recipe, imageUrl)}
-          style={{ position: "absolute", top: 12, right: 14, background: "rgba(0,0,0,0.45)", border: "none", borderRadius: "50%", width: 40, height: 40, cursor: "pointer", fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(6px)", transition: "transform 0.15s" }}
+          style={{ position: "absolute", top: 12, right: 12, background: "rgba(255,255,255,0.9)", border: "none", borderRadius: "50%", width: 36, height: 36, cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}
           aria-label={isFavourite ? "Remove from favourites" : "Save to favourites"}
         >
           {isFavourite ? "❤️" : "🤍"}
         </button>
-        <div style={{ position: "absolute", bottom: 14, left: 18, right: 60 }}>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: "Georgia, serif", lineHeight: 1.2 }}>{recipe.name}</div>
-          {recipe.tagline && <div style={{ fontSize: 13, color: "#aaa", marginTop: 4 }}>{recipe.tagline}</div>}
+        <div style={{ position: "absolute", bottom: 14, left: 16, right: 52 }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "#fff", fontFamily: "Georgia, serif", lineHeight: 1.2 }}>{recipe.name}</div>
+          {recipe.tagline && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.75)", marginTop: 4, fontFamily: "sans-serif" }}>{recipe.tagline}</div>}
         </div>
       </div>
-      <div style={{ padding: "18px 18px 0", display: "flex", justifyContent: "space-around" }}>
-        <MacroRing label="Calories" value={recipe.calories} unit="kcal" color="#ff6b6b" />
-        <MacroRing label="Protein" value={recipe.protein} unit="g" color="#4ecdc4" />
-        <MacroRing label="Carbs" value={recipe.carbs} unit="g" color="#ffe66d" />
-        <MacroRing label="Fat" value={recipe.fat} unit="g" color="#a8e6cf" />
+
+      {/* Macros */}
+      <div style={{ padding: "16px 20px", display: "flex", justifyContent: "space-around", borderBottom: "1px solid #f0ece4", background: "#fafaf8" }}>
+        <MacroBar label="Calories" value={recipe.calories} unit="kcal" color="#1e2d4a" />
+        <MacroBar label="Protein" value={`${recipe.protein}g`} unit="protein" color="#C9A84C" />
+        <MacroBar label="Carbs" value={`${recipe.carbs}g`} unit="carbs" color="#1e2d4a" />
+        <MacroBar label="Fat" value={`${recipe.fat}g`} unit="fat" color="#C9A84C" />
       </div>
-      <button onClick={() => setExpanded(!expanded)} style={{ width: "100%", background: "none", border: "none", color: "#4ecdc4", fontSize: 13, padding: "14px", cursor: "pointer", fontWeight: 600 }}>
+
+      {/* Expand toggle */}
+      <button onClick={() => setExpanded(!expanded)} style={{ width: "100%", background: "none", border: "none", color: "#1e2d4a", fontSize: 12, padding: "13px 20px", cursor: "pointer", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", fontFamily: "sans-serif", textAlign: "center" }}>
         {expanded ? "▲ Hide Recipe" : "▼ Show Full Recipe"}
       </button>
+
       {expanded && (
-        <div style={{ padding: "0 18px 18px" }}>
+        <div style={{ padding: "0 20px 20px", borderTop: "1px solid #f0ece4" }}>
           {recipe.ingredients && (
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#4ecdc4", marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 }}>Ingredients</div>
+            <div style={{ marginBottom: 16, marginTop: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#C9A84C", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1.5, fontFamily: "sans-serif" }}>Ingredients</div>
               {Array.isArray(recipe.ingredients)
                 ? recipe.ingredients.map((ing, i) => (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #2a2a4a", fontSize: 14, color: "#ddd" }}>
-                    <span>{ing.item}</span><span style={{ color: "#888" }}>{ing.amount}</span>
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #f0ece4", fontSize: 14, color: "#444", fontFamily: "sans-serif" }}>
+                    <span>{ing.item}</span><span style={{ color: "#aaa" }}>{ing.amount}</span>
                   </div>
                 ))
-                : <div style={{ color: "#ddd", fontSize: 14 }}>{recipe.ingredients}</div>
+                : <div style={{ color: "#555", fontSize: 14, fontFamily: "sans-serif" }}>{recipe.ingredients}</div>
               }
             </div>
           )}
           {recipe.steps && (
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#ff6b6b", marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 }}>Instructions</div>
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#1e2d4a", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1.5, fontFamily: "sans-serif" }}>Instructions</div>
               {recipe.steps.map((step, i) => (
-                <div key={i} style={{ display: "flex", gap: 10, marginBottom: 10 }}>
-                  <div style={{ minWidth: 26, height: 26, borderRadius: "50%", background: "#ff6b6b22", border: "1px solid #ff6b6b55", color: "#ff6b6b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700 }}>{i + 1}</div>
-                  <div style={{ fontSize: 14, color: "#ccc", lineHeight: 1.6, paddingTop: 3 }}>{step}</div>
+                <div key={i} style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+                  <div style={{ minWidth: 24, height: 24, borderRadius: "50%", background: "#1e2d4a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, fontFamily: "sans-serif", flexShrink: 0 }}>{i + 1}</div>
+                  <div style={{ fontSize: 14, color: "#555", lineHeight: 1.7, paddingTop: 2, fontFamily: "sans-serif" }}>{step}</div>
                 </div>
               ))}
             </div>
@@ -121,13 +125,13 @@ function FavouritesSection({ favourites, onRemove }) {
   const [open, setOpen] = useState(false);
   if (favourites.length === 0) return null;
   return (
-    <div style={{ maxWidth: 460, margin: "32px auto 0", padding: "0 16px" }}>
+    <div style={{ maxWidth: 560, margin: "32px auto 0", padding: "0 20px" }}>
       <button
         onClick={() => setOpen(!open)}
-        style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,107,107,0.3)", borderRadius: 16, padding: "14px 20px", color: "#ff6b6b", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}
+        style={{ width: "100%", background: "#fff", border: "1px solid #e8e4dc", borderRadius: 8, padding: "14px 20px", color: "#1e2d4a", fontSize: 14, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", fontFamily: "sans-serif", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}
       >
         <span>❤️ Saved Favourites ({favourites.length})</span>
-        <span style={{ fontSize: 12 }}>{open ? "▲ Hide" : "▼ Show"}</span>
+        <span style={{ fontSize: 11, color: "#aaa" }}>{open ? "▲ Hide" : "▼ Show"}</span>
       </button>
       {open && (
         <div style={{ marginTop: 16 }}>
@@ -147,30 +151,27 @@ function FavouritesSection({ favourites, onRemove }) {
   );
 }
 
-function UserBar() {
-  const [user, setUser] = useState(null);
-  const router = useRouter();
-
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
-  }, []);
-
-  async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
-  }
-
-  if (!user) return null;
+function Nav({ user, onSignOut }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10, padding: "12px 20px 0", maxWidth: 460, margin: "0 auto" }}>
-      <span style={{ color: "#888", fontSize: 12 }}>{user.email}</span>
-      <button onClick={handleSignOut} style={{ background: "none", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, color: "#666", fontSize: 11, padding: "4px 10px", cursor: "pointer", fontWeight: 600 }}>
-        Sign out
-      </button>
-    </div>
+    <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 48px", borderBottom: "1px solid #e8e4dc", background: "#fff", position: "sticky", top: 0, zIndex: 50 }}>
+      <Link href="/" style={{ fontSize: 20, color: "#1e2d4a", lineHeight: 1, textDecoration: "none" }}>
+        <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet" />
+        <span style={{ fontStyle: "italic", fontWeight: 300 }}>her</span>
+        <span style={{ fontWeight: 800 }}>coach.</span>
+        <span style={{ color: "#C9A84C", fontFamily: "'Great Vibes', cursive", fontWeight: 400, fontSize: 16, marginLeft: 1, verticalAlign: "middle" }}>Jess</span>
+      </Link>
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <Link href="/planner" style={{ fontSize: 12, color: "#555", fontFamily: "sans-serif", textDecoration: "none", letterSpacing: 0.5 }}>Weekly Planner</Link>
+        {user && (
+          <>
+            <span style={{ fontSize: 12, color: "#bbb", fontFamily: "sans-serif" }}>{user.email}</span>
+            <button onClick={onSignOut} style={{ padding: "8px 16px", background: "transparent", color: "#1e2d4a", border: "1px solid #e8e4dc", borderRadius: 4, fontSize: 11, fontWeight: 700, cursor: "pointer", letterSpacing: 1, textTransform: "uppercase", fontFamily: "sans-serif" }}>
+              Sign Out
+            </button>
+          </>
+        )}
+      </div>
+    </nav>
   );
 }
 
@@ -185,15 +186,24 @@ export default function GeneratorPage() {
   const [imageUrls, setImageUrls] = useState({});
   const [error, setError] = useState(null);
   const [favourites, setFavourites] = useState([]);
+  const [user, setUser] = useState(null);
+  const router = useRouter();
 
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem("mealFavourites") || "[]");
       setFavourites(saved);
-    } catch {
-      // ignore parse errors
-    }
+    } catch { /* ignore */ }
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
   }, []);
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
 
   function toggleFavourite(recipe, imageUrl) {
     setFavourites(prev => {
@@ -252,66 +262,121 @@ export default function GeneratorPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "radial-gradient(ellipse at top left,#0f0c29,#302b63,#24243e)", padding: "0 0 60px" }}>
-      <UserBar />
-      <div style={{ textAlign: "center", padding: "30px 20px 30px" }}>
-        <div style={{ fontSize: 13, color: "#ff6b6b", letterSpacing: 2, textTransform: "uppercase", fontWeight: 800, marginBottom: 4, fontFamily: "Georgia, serif" }}>HerCoachJess</div>
-        <div style={{ fontSize: 11, color: "#4ecdc4", letterSpacing: 3, textTransform: "uppercase", fontWeight: 600, marginBottom: 10 }}>AI-Powered</div>
-        <h1 style={{ fontSize: "clamp(28px,5vw,50px)", fontFamily: "Georgia, serif", color: "#fff", margin: 0, lineHeight: 1.1 }}>
-          Macro Meal<br /><span style={{ color: "#4ecdc4" }}>Generator</span>
-        </h1>
-        <p style={{ color: "#888", marginTop: 12, fontSize: 14, maxWidth: 380, margin: "12px auto 0" }}>
-          Enter your targets. Get a perfectly matched meal — from your library or invented just for you.
-        </p>
-        <div style={{ marginTop: 16 }}>
-          <Link href="/planner" style={{ display: "inline-block", padding: "9px 22px", borderRadius: 20, border: "1px solid rgba(78,205,196,0.4)", color: "#4ecdc4", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
-            📅 Weekly Meal Planner
-          </Link>
+    <div style={{ minHeight: "100vh", background: "#fafaf8", fontFamily: "Georgia, serif" }}>
+      <style>{`
+        * { box-sizing: border-box; }
+        .gen-input {
+          width: 100%; background: #fff; border: 1px solid #e8e4dc; border-radius: 4px;
+          padding: 12px 14px; color: #1a1a1a; font-size: 14px; font-family: sans-serif;
+          outline: none; transition: border-color 0.2s;
+        }
+        .gen-input:focus { border-color: #1e2d4a; }
+        .gen-input::placeholder { color: #ccc; }
+        .flavor-pill {
+          padding: 7px 14px; border-radius: 20px; font-size: 12px; cursor: pointer;
+          font-weight: 600; border: 1px solid #e8e4dc; background: #fff; color: #888;
+          font-family: sans-serif; transition: all 0.15s;
+        }
+        .flavor-pill.active { background: #1e2d4a; color: #fff; border-color: #1e2d4a; }
+        .btn-generate {
+          width: 100%; padding: 15px; border: none; border-radius: 4px;
+          background: #1e2d4a; color: #fff; font-size: 13px; font-weight: 700;
+          letter-spacing: 2px; text-transform: uppercase; font-family: sans-serif;
+          cursor: pointer; transition: opacity 0.2s; margin-bottom: 10px;
+        }
+        .btn-generate:disabled { opacity: 0.45; cursor: not-allowed; }
+        .btn-surprise {
+          width: 100%; padding: 13px; border-radius: 4px; background: transparent;
+          border: 1px solid #C9A84C; color: #C9A84C; font-size: 13px; font-weight: 700;
+          letter-spacing: 1.5px; text-transform: uppercase; font-family: sans-serif; cursor: pointer;
+          transition: all 0.2s;
+        }
+        .btn-surprise:disabled { opacity: 0.45; cursor: not-allowed; }
+        input[type="range"] { accent-color: #1e2d4a; }
+        @media (max-width: 768px) {
+          .gen-nav { padding: 16px 20px !important; }
+          .gen-nav-links { display: none; }
+          .gen-body { padding: 32px 16px !important; }
+        }
+      `}</style>
+
+      <Nav user={user} onSignOut={handleSignOut} />
+
+      <div className="gen-body" style={{ maxWidth: 560, margin: "0 auto", padding: "48px 20px 80px" }}>
+
+        {/* Header */}
+        <div style={{ textAlign: "center", marginBottom: 40 }}>
+          <div style={{ fontSize: 11, color: "#C9A84C", letterSpacing: 4, textTransform: "uppercase", marginBottom: 12, fontFamily: "sans-serif", fontWeight: 700 }}>AI-Powered</div>
+          <h1 style={{ fontSize: "clamp(28px, 5vw, 42px)", fontWeight: 400, color: "#1a1a1a", margin: 0, lineHeight: 1.15 }}>
+            Macro Meal <span style={{ color: "#C9A84C", fontStyle: "italic" }}>Generator</span>
+          </h1>
+          <p style={{ color: "#999", marginTop: 12, fontSize: 14, maxWidth: 400, margin: "12px auto 0", lineHeight: 1.8, fontFamily: "sans-serif", fontWeight: 300 }}>
+            Enter your targets. Get a perfectly matched meal — from your library or invented just for you.
+          </p>
         </div>
-      </div>
-      <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 16px" }}>
-        <div style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(20px)", borderRadius: 24, padding: 26, border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 30px 80px rgba(0,0,0,0.4)" }}>
-          <div style={{ marginBottom: 18 }}>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#ccc", marginBottom: 7 }}>
-              🔥 Calories: <span style={{ color: "#ff6b6b", fontWeight: 700 }}>{calories} kcal</span>
+
+        {/* Form card */}
+        <div style={{ background: "#fff", border: "1px solid #e8e4dc", borderRadius: 8, padding: "36px 32px", boxShadow: "0 4px 24px rgba(0,0,0,0.05)", marginBottom: 24 }}>
+
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#888", marginBottom: 8, letterSpacing: 1, textTransform: "uppercase", fontFamily: "sans-serif" }}>
+              Calories — <span style={{ color: "#1e2d4a" }}>{calories} kcal</span>
             </label>
-            <input type="range" min={300} max={900} value={calories} onChange={e => setCalories(+e.target.value)} style={{ width: "100%", accentColor: "#ff6b6b" }} />
+            <input type="range" min={300} max={900} value={calories} onChange={e => setCalories(+e.target.value)} style={{ width: "100%" }} />
           </div>
-          <div style={{ marginBottom: 18 }}>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#ccc", marginBottom: 7 }}>
-              💪 Protein: <span style={{ color: "#4ecdc4", fontWeight: 700 }}>{protein}g</span>
+
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#888", marginBottom: 8, letterSpacing: 1, textTransform: "uppercase", fontFamily: "sans-serif" }}>
+              Protein — <span style={{ color: "#C9A84C" }}>{protein}g</span>
             </label>
-            <input type="range" min={10} max={80} value={protein} onChange={e => setProtein(+e.target.value)} style={{ width: "100%", accentColor: "#4ecdc4" }} />
+            <input type="range" min={10} max={80} value={protein} onChange={e => setProtein(+e.target.value)} style={{ width: "100%", accentColor: "#C9A84C" }} />
           </div>
-          <div style={{ marginBottom: 18 }}>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#ccc", marginBottom: 7 }}>🥩 Key Ingredient</label>
-            <input type="text" placeholder="e.g. salmon, tofu, chicken..." value={ingredient} onChange={e => setIngredient(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 12, padding: "11px 14px", color: "#fff", fontSize: 14, boxSizing: "border-box" }} />
+
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#888", marginBottom: 8, letterSpacing: 1, textTransform: "uppercase", fontFamily: "sans-serif" }}>Key Ingredient</label>
+            <input type="text" placeholder="e.g. salmon, tofu, chicken..." value={ingredient} onChange={e => setIngredient(e.target.value)} className="gen-input" />
           </div>
-          <div style={{ marginBottom: 22 }}>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#ccc", marginBottom: 7 }}>🌶️ Flavor Profile</label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+
+          <div style={{ marginBottom: 28 }}>
+            <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#888", marginBottom: 10, letterSpacing: 1, textTransform: "uppercase", fontFamily: "sans-serif" }}>Flavour Profile</label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {FLAVOR_PROFILES.map(f => (
-                <button key={f} onClick={() => setFlavor(f)} style={{ padding: "7px 13px", borderRadius: 20, fontSize: 12, cursor: "pointer", fontWeight: 600, background: flavor === f ? "#4ecdc4" : "rgba(255,255,255,0.07)", color: flavor === f ? "#000" : "#aaa", border: flavor === f ? "1px solid #4ecdc4" : "1px solid rgba(255,255,255,0.1)" }}>{f}</button>
+                <button key={f} onClick={() => setFlavor(f)} className={`flavor-pill${flavor === f ? " active" : ""}`}>{f}</button>
               ))}
             </div>
           </div>
-          <button onClick={() => handleGenerate(false)} disabled={loading} style={{ width: "100%", padding: "15px", borderRadius: 14, border: "none", background: loading ? "#333" : "linear-gradient(135deg,#4ecdc4,#2bb5ad)", color: loading ? "#666" : "#000", fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer", marginBottom: 10, boxShadow: loading ? "none" : "0 8px 30px rgba(78,205,196,0.4)" }}>
-            {loading ? "✨ Generating..." : "🔍 Find My Meal"}
+
+          <button onClick={() => handleGenerate(false)} disabled={loading} className="btn-generate">
+            {loading ? "Finding your meal..." : "Find My Meal"}
           </button>
-          <button onClick={() => handleGenerate(true)} disabled={loading} style={{ width: "100%", padding: "13px", borderRadius: 14, background: "transparent", border: "1px solid rgba(255,107,107,0.4)", color: "#ff6b6b", fontSize: 14, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer" }}>
-            🎲 Surprise Me — AI Generate
+          <button onClick={() => handleGenerate(true)} disabled={loading} className="btn-surprise">
+            ✦ Surprise Me — AI Generate
           </button>
         </div>
+
+        {/* Status badge */}
         {path && !loading && (
-          <div style={{ textAlign: "center", margin: "18px 0 8px" }}>
-            <span style={{ background: path === "DATABASE" ? "#00d4aa22" : "#ff6b6b22", border: `1px solid ${path === "DATABASE" ? "#00d4aa" : "#ff6b6b"}`, color: path === "DATABASE" ? "#00d4aa" : "#ff6b6b", padding: "5px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
-              {path === "DATABASE" ? "📚 Matched from your meal library" : "✨ AI-invented just for you"}
+          <div style={{ textAlign: "center", margin: "0 0 20px" }}>
+            <span style={{ display: "inline-block", background: path === "DATABASE" ? "rgba(201,168,76,0.1)" : "rgba(30,45,74,0.08)", border: `1px solid ${path === "DATABASE" ? "rgba(201,168,76,0.4)" : "rgba(30,45,74,0.25)"}`, color: path === "DATABASE" ? "#9a7a28" : "#1e2d4a", padding: "5px 16px", borderRadius: 20, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, fontFamily: "sans-serif" }}>
+              {path === "DATABASE" ? "Matched from your meal library" : "✦ AI-invented just for you"}
             </span>
           </div>
         )}
-        {loading && <div style={{ textAlign: "center", padding: 28, color: "#4ecdc4", fontSize: 14 }}>✨ Crafting your perfect meal...</div>}
-        {error && <div style={{ background: "#ff6b6b22", border: "1px solid #ff6b6b44", borderRadius: 12, padding: 14, marginTop: 14, color: "#ff6b6b", fontSize: 13 }}>⚠️ {error}</div>}
-        <div style={{ marginTop: 18 }}>
+
+        {loading && (
+          <div style={{ textAlign: "center", padding: 32, color: "#C9A84C", fontSize: 14, fontFamily: "sans-serif" }}>
+            ✦ Crafting your perfect meal...
+          </div>
+        )}
+
+        {error && (
+          <div style={{ background: "rgba(220,53,53,0.06)", border: "1px solid rgba(220,53,53,0.2)", borderRadius: 4, padding: 14, marginBottom: 16, color: "#c0392b", fontSize: 13, fontFamily: "sans-serif" }}>
+            ⚠ {error}
+          </div>
+        )}
+
+        {/* Recipe results */}
+        <div>
           {recipes.map((recipe, i) => (
             <RecipeCard
               key={i}
@@ -323,19 +388,28 @@ export default function GeneratorPage() {
             />
           ))}
         </div>
+
         {path === "DATABASE" && recipes.length > 0 && (
           <div style={{ textAlign: "center", marginTop: 8 }}>
-            <button onClick={() => handleGenerate(true)} style={{ background: "none", border: "1px solid #4ecdc444", borderRadius: 12, color: "#4ecdc4", padding: "11px 22px", fontSize: 13, cursor: "pointer", fontWeight: 600 }}>
-              Not what you wanted? ✨ Let AI invent something new
+            <button onClick={() => handleGenerate(true)} style={{ background: "none", border: "1px solid #e8e4dc", borderRadius: 4, color: "#1e2d4a", padding: "11px 24px", fontSize: 12, cursor: "pointer", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", fontFamily: "sans-serif" }}>
+              Not what you wanted? Let AI invent something new
             </button>
           </div>
         )}
+
+        {/* Favourites */}
+        <FavouritesSection favourites={favourites} onRemove={removeFavourite} />
       </div>
-      <FavouritesSection favourites={favourites} onRemove={removeFavourite} />
-      <div style={{ textAlign: "center", marginTop: 48, paddingBottom: 16 }}>
-        <div style={{ fontSize: 13, color: "#ff6b6b", fontFamily: "Georgia, serif", fontWeight: 800, letterSpacing: 1 }}>HerCoachJess</div>
-        <div style={{ fontSize: 11, color: "#333", marginTop: 4 }}>Macro Meal Generator</div>
-      </div>
+
+      {/* Footer */}
+      <footer style={{ background: "#fff", borderTop: "1px solid #e8e4dc", padding: "28px 48px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+        <Link href="/" style={{ fontSize: 18, color: "#1e2d4a", lineHeight: 1, textDecoration: "none" }}>
+          <span style={{ fontStyle: "italic", fontWeight: 300 }}>her</span>
+          <span style={{ fontWeight: 800 }}>coach.</span>
+          <span style={{ color: "#C9A84C", fontFamily: "'Great Vibes', cursive", fontWeight: 400, fontSize: 16, marginLeft: 1, verticalAlign: "middle" }}>Jess</span>
+        </Link>
+        <div style={{ fontSize: 12, color: "#bbb", fontFamily: "sans-serif" }}>© 2026 HerCoachJess. All rights reserved.</div>
+      </footer>
     </div>
   );
 }
