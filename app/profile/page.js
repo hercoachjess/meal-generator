@@ -159,7 +159,7 @@ export default function ProfilePage() {
         }, { onConflict: "user_id" });
 
         if (upsertError) {
-          setError("Could not save your profile. Please try again.");
+          setError(`Could not save — ${upsertError.message}. If this keeps happening, the database table may not be set up yet.`);
           console.error("Profile save error:", upsertError.message);
         } else {
           setSuccess(true);
@@ -235,7 +235,7 @@ export default function ProfilePage() {
               HerCoach.Jess
             </div>
             <h1 style={{ fontSize: 26, fontWeight: 400, color: "#1a1a1a", margin: "0 0 14px", lineHeight: 1.2 }}>
-              Your Profile &amp; Macros
+              Your Macros
             </h1>
             <p style={{ color: "#999", fontSize: 14, margin: 0, lineHeight: 1.8, fontFamily: "sans-serif", fontWeight: 300 }}>
               Update your details any time and we&apos;ll recalculate your targets.
