@@ -411,7 +411,7 @@ export default function PlannerPage() {
       {/* Header */}
       <div style={{ textAlign: "center", padding: "40px 20px 24px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: 400, margin: "0 auto 16px", padding: "0 4px" }}>
-          <Link href="/" style={{ color: "#4ecdc4", fontSize: 13, fontWeight: 600, textDecoration: "none", opacity: 0.8 }}>
+          <Link href="/generator" style={{ color: "#4ecdc4", fontSize: 13, fontWeight: 600, textDecoration: "none", opacity: 0.8 }}>
             ← Back to Generator
           </Link>
           {user && (

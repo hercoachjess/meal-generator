@@ -1,341 +1,270 @@
 "use client";
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { createClient } from "../lib/supabase/client";
 
-const FLAVOR_PROFILES = ["Mediterranean", "Spicy", "Comfort Food", "Asian", "High Protein", "Vegetarian"];
-
-const SAMPLE_DB = [
-  { id: 1, name: "Lemon Herb Chicken Bowl", calories: 548, protein: 41, carbs: 38, fat: 14, flavor: "Mediterranean", steps: ["Grill 200g chicken breast seasoned with lemon and herbs for 6 mins each side.", "Cook 80g quinoa in vegetable stock for 12 minutes.", "Slice cucumber, halve cherry tomatoes, crumble 30g feta.", "Assemble bowl, drizzle with olive oil and lemon juice."], ingredients: [{ item: "Chicken breast", amount: "200g" }, { item: "Quinoa", amount: "80g" }, { item: "Cucumber", amount: "50g" }, { item: "Feta cheese", amount: "30g" }, { item: "Olive oil", amount: "1 tbsp" }] },
-  { id: 2, name: "Spicy Beef & Rice Power Bowl", calories: 562, protein: 43, carbs: 42, fat: 15, flavor: "Spicy", steps: ["Brown 180g lean beef mince with garlic and chilli flakes.", "Cook 90g brown rice according to packet instructions.", "Drain and rinse 80g black beans, warm in pan.", "Assemble bowl with salsa and fresh coriander on top."], ingredients: [{ item: "Lean beef mince", amount: "180g" }, { item: "Brown rice", amount: "90g" }, { item: "Black beans", amount: "80g" }, { item: "Salsa", amount: "2 tbsp" }] },
-  { id: 3, name: "Turkey Meatball Pasta", calories: 530, protein: 39, carbs: 55, fat: 12, flavor: "Comfort Food", steps: ["Mix 200g turkey mince with garlic, form into 8 meatballs.", "Fry meatballs in olive oil for 10 mins until golden.", "Cook 90g whole wheat pasta, warm 150ml marinara sauce.", "Combine everything and top with 20g grated parmesan."], ingredients: [{ item: "Turkey mince", amount: "200g" }, { item: "Whole wheat pasta", amount: "90g" }, { item: "Marinara sauce", amount: "150ml" }, { item: "Parmesan", amount: "20g" }] },
-];
-
-function matchesMacros(meal, targets) {
-  const tol = 0.10;
-  const within = (v, t) => Math.abs(v - t) / t <= tol;
-  return within(meal.calories, targets.calories) && within(meal.protein, targets.protein);
-}
-
-async function callClaudeAPI(calories, protein, ingredient, flavorProfile) {
-  const response = await fetch("/api/generate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ calories, protein, ingredient, flavorProfile }),
-  });
-  const data = await response.json();
-  return data.recipe;
-}
-
-async function fetchGoogleImage(recipeName, flavor) {
-  try {
-    const query = `${recipeName} ${flavor} meal`;
-    const response = await fetch(`/api/image?query=${encodeURIComponent(query)}`);
-    const data = await response.json();
-    return data.imageUrl || getFallbackImage(flavor);
-  } catch {
-    return getFallbackImage(flavor);
+export default function LandingPage() {
+  function scrollTo(id) {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   }
-}
 
-function getFallbackImage(flavor) {
-  const seeds = { Mediterranean: 292, Spicy: 431, "Comfort Food": 167, Asian: 312, "High Protein": 488, Vegetarian: 145 };
-  const seed = seeds[flavor] || 200;
-  return `https://picsum.photos/seed/${seed}/800/500`;
-}
-
-function MacroRing({ label, value, unit, color }) {
   return (
-    <div style={{ textAlign: "center" }}>
-      <div style={{ width: 68, height: 68, borderRadius: "50%", border: `3px solid ${color}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: `${color}18`, margin: "0 auto 6px", boxShadow: `0 0 14px ${color}40` }}>
-        <span style={{ fontSize: 17, fontWeight: 800, color, fontFamily: "Georgia, serif" }}>{value}</span>
-      </div>
-      <div style={{ fontSize: 11, color: "#888", textTransform: "uppercase", letterSpacing: 1 }}>{label}</div>
-      <div style={{ fontSize: 10, color: "#555" }}>{unit}</div>
-    </div>
-  );
-}
+    <div className="landing" style={{ fontFamily: "'Georgia', serif", background: "#f5f5f3", minHeight: "100vh", color: "#1a1a1a" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet" />
 
-function RecipeCard({ recipe, flavor, imageUrl, isFavourite, onToggleFavourite }) {
-  const [expanded, setExpanded] = useState(false);
-  return (
-    <div style={{ background: "linear-gradient(160deg,#1a1a2e,#16213e)", borderRadius: 20, overflow: "hidden", border: "1px solid #2a2a4a", boxShadow: "0 20px 60px rgba(0,0,0,0.5)", marginBottom: 24 }}>
-      <div style={{ position: "relative", height: 220, overflow: "hidden" }}>
-        <img src={imageUrl} alt={recipe.name} style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.7)" }} onError={e => { e.target.src = getFallbackImage(flavor); }} />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top,#1a1a2e,transparent 60%)" }} />
-        <button
-          onClick={() => onToggleFavourite(recipe, imageUrl)}
-          style={{ position: "absolute", top: 12, right: 14, background: "rgba(0,0,0,0.45)", border: "none", borderRadius: "50%", width: 40, height: 40, cursor: "pointer", fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(6px)", transition: "transform 0.15s" }}
-          aria-label={isFavourite ? "Remove from favourites" : "Save to favourites"}
-        >
-          {isFavourite ? "❤️" : "🤍"}
-        </button>
-        <div style={{ position: "absolute", bottom: 14, left: 18, right: 60 }}>
-          <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: "Georgia, serif", lineHeight: 1.2 }}>{recipe.name}</div>
-          {recipe.tagline && <div style={{ fontSize: 13, color: "#aaa", marginTop: 4 }}>{recipe.tagline}</div>}
-        </div>
-      </div>
-      <div style={{ padding: "18px 18px 0", display: "flex", justifyContent: "space-around" }}>
-        <MacroRing label="Calories" value={recipe.calories} unit="kcal" color="#ff6b6b" />
-        <MacroRing label="Protein" value={recipe.protein} unit="g" color="#4ecdc4" />
-        <MacroRing label="Carbs" value={recipe.carbs} unit="g" color="#ffe66d" />
-        <MacroRing label="Fat" value={recipe.fat} unit="g" color="#a8e6cf" />
-      </div>
-      <button onClick={() => setExpanded(!expanded)} style={{ width: "100%", background: "none", border: "none", color: "#4ecdc4", fontSize: 13, padding: "14px", cursor: "pointer", fontWeight: 600 }}>
-        {expanded ? "▲ Hide Recipe" : "▼ Show Full Recipe"}
-      </button>
-      {expanded && (
-        <div style={{ padding: "0 18px 18px" }}>
-          {recipe.ingredients && (
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#4ecdc4", marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 }}>Ingredients</div>
-              {Array.isArray(recipe.ingredients)
-                ? recipe.ingredients.map((ing, i) => (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #2a2a4a", fontSize: 14, color: "#ddd" }}>
-                    <span>{ing.item}</span><span style={{ color: "#888" }}>{ing.amount}</span>
-                  </div>
-                ))
-                : <div style={{ color: "#ddd", fontSize: 14 }}>{recipe.ingredients}</div>
-              }
-            </div>
-          )}
-          {recipe.steps && (
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: "#ff6b6b", marginBottom: 8, textTransform: "uppercase", letterSpacing: 1 }}>Instructions</div>
-              {recipe.steps.map((step, i) => (
-                <div key={i} style={{ display: "flex", gap: 10, marginBottom: 10 }}>
-                  <div style={{ minWidth: 26, height: 26, borderRadius: "50%", background: "#ff6b6b22", border: "1px solid #ff6b6b55", color: "#ff6b6b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700 }}>{i + 1}</div>
-                  <div style={{ fontSize: 14, color: "#ccc", lineHeight: 1.6, paddingTop: 3 }}>{step}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
+      <style>{`
+        * { box-sizing: border-box; }
 
-function FavouritesSection({ favourites, onRemove }) {
-  const [open, setOpen] = useState(false);
-  if (favourites.length === 0) return null;
-  return (
-    <div style={{ maxWidth: 460, margin: "32px auto 0", padding: "0 16px" }}>
-      <button
-        onClick={() => setOpen(!open)}
-        style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,107,107,0.3)", borderRadius: 16, padding: "14px 20px", color: "#ff6b6b", fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between" }}
-      >
-        <span>❤️ Saved Favourites ({favourites.length})</span>
-        <span style={{ fontSize: 12 }}>{open ? "▲ Hide" : "▼ Show"}</span>
-      </button>
-      {open && (
-        <div style={{ marginTop: 16 }}>
-          {favourites.map((fav, i) => (
-            <RecipeCard
-              key={fav.savedAt}
-              recipe={fav.recipe}
-              flavor={fav.flavor}
-              imageUrl={fav.imageUrl}
-              isFavourite={true}
-              onToggleFavourite={() => onRemove(fav.savedAt)}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+        /* NAV */
+        .nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 48px; border-bottom: 1px solid #e8e4dc; background: #fff; position: sticky; top: 0; z-index: 50; }
+        .nav-logo { flex: 0 0 180px; font-size: 20px; color: #1e2d4a; line-height: 1; }
+        .nav-links { flex: 1; display: flex; justify-content: center; gap: 32px; font-size: 12px; letter-spacing: 0.5px; font-family: sans-serif; white-space: nowrap; }
+        .nav-links span { cursor: pointer; color: #555; }
+        .nav-links span:hover { color: #1e2d4a; }
+        .nav-buttons { flex: 0 0 auto; display: flex; gap: 12px; align-items: center; margin-left: 40px; }
+        .btn-outline { padding: 11px 22px; background: transparent; color: #1e2d4a; border: 1px solid #1e2d4a; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase; font-family: sans-serif; white-space: nowrap; text-decoration: none; display: inline-block; }
+        .btn-navy { padding: 11px 28px; background: #1e2d4a; color: #fff; border: none; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase; font-family: sans-serif; white-space: nowrap; text-decoration: none; display: inline-block; }
+        .btn-gold { padding: 15px 40px; background: #C9A84C; color: #1a1a1a; border: none; border-radius: 4px; font-size: 13px; font-weight: 700; cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase; font-family: sans-serif; text-decoration: none; display: inline-block; }
+        .btn-navy-lg { padding: 15px 40px; background: #1e2d4a; color: #fff; border: none; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; letter-spacing: 1px; font-family: sans-serif; }
 
-function UserBar() {
-  const [user, setUser] = useState(null);
-  const router = useRouter();
+        /* HERO */
+        .hero { background: #fafaf8; padding: 110px 64px 90px; text-align: center; }
+        .hero h1 { font-size: clamp(38px, 6vw, 70px); font-weight: 400; line-height: 1.1; margin: 0 0 24px; color: #1a1a1a; letter-spacing: -1px; }
+        .hero p { font-size: 17px; color: #888; max-width: 500px; margin: 0 auto 48px; line-height: 1.9; font-family: sans-serif; font-weight: 300; }
+        .hero-buttons { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
 
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
-  }, []);
+        /* MOCK CARDS */
+        .mock-section { max-width: 900px; margin: 0 auto; padding: 0 64px; }
+        .mock-inner { background: linear-gradient(135deg,#1a1a1a,#2d2d2d,#1a1a1a); border-radius: 12px; height: 320px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .mock-cards { display: flex; gap: 16px; padding: 24px; justify-content: center; width: 100%; overflow-x: auto; }
+        .mock-card { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 20px; min-width: 190px; flex-shrink: 0; }
 
-  async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
-  }
+        /* STATS */
+        .stats { display: flex; justify-content: center; padding: 80px 64px; flex-wrap: wrap; max-width: 800px; margin: 0 auto; background: #fff; }
+        .stat { text-align: center; flex: 1; min-width: 140px; padding: 20px 40px; border-right: 1px solid #e8e4dc; }
+        .stat:last-child { border-right: none; }
 
-  if (!user) return null;
-  return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10, padding: "12px 20px 0", maxWidth: 460, margin: "0 auto" }}>
-      <span style={{ color: "#888", fontSize: 12 }}>{user.email}</span>
-      <button onClick={handleSignOut} style={{ background: "none", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, color: "#666", fontSize: 11, padding: "4px 10px", cursor: "pointer", fontWeight: 600 }}>
-        Sign out
-      </button>
-    </div>
-  );
-}
+        /* FEATURES */
+        .features { max-width: 960px; margin: 0 auto; padding: 100px 64px; background: #f5f5f3; }
+        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #ddd; }
+        .feature-card { background: #fff; padding: 44px 36px; }
 
-export default function Home() {
-  const [calories, setCalories] = useState(550);
-  const [protein, setProtein] = useState(40);
-  const [ingredient, setIngredient] = useState("");
-  const [flavor, setFlavor] = useState("Mediterranean");
-  const [loading, setLoading] = useState(false);
-  const [path, setPath] = useState(null);
-  const [recipes, setRecipes] = useState([]);
-  const [imageUrls, setImageUrls] = useState({});
-  const [error, setError] = useState(null);
-  const [favourites, setFavourites] = useState([]);
+        /* HOW IT WORKS */
+        .how { background: #fff; padding: 100px 64px; border-top: 1px solid #e8e4dc; border-bottom: 1px solid #e8e4dc; }
+        .how-inner { max-width: 820px; margin: 0 auto; text-align: center; }
+        .how-steps { display: flex; gap: 60px; justify-content: center; flex-wrap: wrap; }
+        .how-step { max-width: 220px; }
 
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem("mealFavourites") || "[]");
-      setFavourites(saved);
-    } catch {
-      // ignore parse errors
-    }
-  }, []);
+        /* PRICING */
+        .pricing { max-width: 600px; margin: 0 auto; padding: 100px 64px; text-align: center; }
+        .pricing-card { background: #fff; border: 1px solid #e8e4dc; border-radius: 8px; padding: 56px 48px; box-shadow: 0 4px 40px rgba(0,0,0,0.06); }
+        .btn-dark-full { display: block; width: 100%; margin-top: 36px; padding: 16px; background: #1a1a1a; color: #fff; border: none; border-radius: 4px; font-size: 13px; font-weight: 700; cursor: pointer; letter-spacing: 2px; text-transform: uppercase; font-family: sans-serif; text-decoration: none; }
 
-  function toggleFavourite(recipe, imageUrl) {
-    setFavourites(prev => {
-      const exists = prev.find(f => f.recipe.name === recipe.name);
-      const next = exists
-        ? prev.filter(f => f.recipe.name !== recipe.name)
-        : [...prev, { recipe, flavor, imageUrl, savedAt: Date.now() }];
-      localStorage.setItem("mealFavourites", JSON.stringify(next));
-      return next;
-    });
-  }
+        /* CTA */
+        .cta { background: #1e2d4a; padding: 80px 64px; text-align: center; }
 
-  function removeFavourite(savedAt) {
-    setFavourites(prev => {
-      const next = prev.filter(f => f.savedAt !== savedAt);
-      localStorage.setItem("mealFavourites", JSON.stringify(next));
-      return next;
-    });
-  }
+        /* FOOTER */
+        .footer { background: #fff; border-top: 1px solid #e8e4dc; padding: 36px 64px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
 
-  function isFavourite(recipe) {
-    return favourites.some(f => f.recipe.name === recipe.name);
-  }
+        /* LABEL */
+        .label { display: inline-block; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.4); border-radius: 20px; padding: 6px 18px; font-size: 11px; color: #C9A84C; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 28px; font-family: sans-serif; font-weight: 700; }
+        .sublabel { font-size: 11px; color: #C9A84C; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 16px; font-family: sans-serif; font-weight: 700; }
 
-  async function handleGenerate(surpriseMe = false) {
-    setError(null);
-    setLoading(true);
-    setRecipes([]);
-    setPath(null);
-    setImageUrls({});
-    try {
-      if (!surpriseMe) {
-        const matches = SAMPLE_DB.filter(m => matchesMacros(m, { calories, protein }));
-        if (matches.length > 0) {
-          setPath("DATABASE");
-          setRecipes(matches);
-          matches.forEach(async (r, i) => {
-            const url = await fetchGoogleImage(r.name, r.flavor);
-            setImageUrls(prev => ({ ...prev, [i]: url }));
-          });
-          setLoading(false);
-          return;
+        /* ── MOBILE ── */
+        @media (max-width: 768px) {
+          .nav { padding: 16px 20px; }
+          .nav-logo { flex: 1; font-size: 18px; }
+          .nav-links { display: none; }
+          .nav-buttons { margin-left: 0; gap: 8px; }
+          .btn-outline { padding: 9px 14px; font-size: 10px; }
+          .btn-navy { padding: 9px 14px; font-size: 10px; }
+
+          .hero { padding: 60px 24px 56px; }
+          .hero p { font-size: 15px; }
+
+          .mock-section { padding: 0 20px; }
+          .mock-inner { height: auto; padding: 16px 0; }
+          .mock-cards { gap: 12px; padding: 16px; justify-content: flex-start; }
+
+          .stats { padding: 48px 24px; }
+          .stat { padding: 16px 20px; border-right: none; border-bottom: 1px solid #e8e4dc; }
+          .stat:last-child { border-bottom: none; }
+
+          .features { padding: 60px 20px; }
+          .features-grid { grid-template-columns: 1fr; }
+
+          .how { padding: 60px 24px; }
+          .how-steps { gap: 40px; }
+          .how-step { max-width: 100%; width: 100%; }
+
+          .pricing { padding: 60px 20px; }
+          .pricing-card { padding: 36px 24px; }
+
+          .cta { padding: 60px 24px; }
+
+          .footer { padding: 28px 24px; flex-direction: column; text-align: center; }
         }
-      }
-      setPath("AI");
-      const recipe = await callClaudeAPI(calories, protein, ingredient || "chicken", flavor);
-      setRecipes([recipe]);
-      const url = await fetchGoogleImage(recipe.name, flavor);
-      setImageUrls({ 0: url });
-    } catch (e) {
-      setError("Something went wrong. Please try again.");
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }
 
-  return (
-    <div style={{ minHeight: "100vh", background: "radial-gradient(ellipse at top left,#0f0c29,#302b63,#24243e)", padding: "0 0 60px" }}>
-      <UserBar />
-      <div style={{ textAlign: "center", padding: "30px 20px 30px" }}>
-        <div style={{ fontSize: 13, color: "#ff6b6b", letterSpacing: 2, textTransform: "uppercase", fontWeight: 800, marginBottom: 4, fontFamily: "Georgia, serif" }}>HerCoachJess</div>
-        <div style={{ fontSize: 11, color: "#4ecdc4", letterSpacing: 3, textTransform: "uppercase", fontWeight: 600, marginBottom: 10 }}>AI-Powered</div>
-        <h1 style={{ fontSize: "clamp(28px,5vw,50px)", fontFamily: "Georgia, serif", color: "#fff", margin: 0, lineHeight: 1.1 }}>
-          Macro Meal<br /><span style={{ color: "#4ecdc4" }}>Generator</span>
+        /* ── TABLET ── */
+        @media (min-width: 769px) and (max-width: 1024px) {
+          .nav { padding: 18px 32px; }
+          .hero { padding: 80px 40px 70px; }
+          .mock-section { padding: 0 40px; }
+          .stats { padding: 60px 40px; }
+          .features { padding: 80px 40px; }
+          .features-grid { grid-template-columns: repeat(2, 1fr); }
+          .how { padding: 80px 40px; }
+          .pricing { padding: 80px 40px; }
+          .cta { padding: 60px 40px; }
+          .footer { padding: 28px 40px; }
+        }
+      `}</style>
+
+      {/* NAV */}
+      <nav className="nav">
+        <div className="nav-logo">
+          <span style={{ fontStyle: "italic", fontWeight: 300, color: "#1e2d4a" }}>her</span>
+          <span style={{ fontWeight: 800, color: "#1e2d4a" }}>coach.</span>
+          <span style={{ color: "#C9A84C", fontFamily: "'Great Vibes', cursive", fontWeight: 400, fontSize: 16, marginLeft: 1, verticalAlign: "middle" }}>Jess</span>
+        </div>
+        <div className="nav-links">
+          <span onClick={() => scrollTo("features")}>Features</span>
+          <span onClick={() => scrollTo("how-it-works")}>How It Works</span>
+          <span onClick={() => scrollTo("pricing")}>Pricing</span>
+        </div>
+        <div className="nav-buttons">
+          <Link href="/login" className="btn-outline">Log In</Link>
+          <Link href="/login" className="btn-navy">Get Started</Link>
+        </div>
+      </nav>
+
+      {/* HERO */}
+      <section className="hero">
+        <div className="label">AI-Powered Nutrition Planning</div>
+        <h1>
+          Meals matched<br />to <span style={{ color: "#C9A84C", fontStyle: "italic" }}>your macros.</span>
         </h1>
-        <p style={{ color: "#888", marginTop: 12, fontSize: 14, maxWidth: 380, margin: "12px auto 0" }}>
-          Enter your targets. Get a perfectly matched meal — from your library or invented just for you.
+        <p>
+          AI-generated meal plans personalised to your body, goals and taste. Built for women who want real results without the guesswork.
         </p>
-        <div style={{ marginTop: 16 }}>
-          <Link href="/planner" style={{ display: "inline-block", padding: "9px 22px", borderRadius: 20, border: "1px solid rgba(78,205,196,0.4)", color: "#4ecdc4", fontSize: 13, fontWeight: 600, textDecoration: "none" }}>
-            📅 Weekly Meal Planner
-          </Link>
+        <div className="hero-buttons">
+          <Link href="/login" className="btn-gold">Start Free Trial</Link>
+          <button className="btn-navy-lg" onClick={() => scrollTo("how-it-works")}>See How It Works →</button>
         </div>
-      </div>
-      <div style={{ maxWidth: 460, margin: "0 auto", padding: "0 16px" }}>
-        <div style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(20px)", borderRadius: 24, padding: 26, border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 30px 80px rgba(0,0,0,0.4)" }}>
-          <div style={{ marginBottom: 18 }}>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#ccc", marginBottom: 7 }}>
-              🔥 Calories: <span style={{ color: "#ff6b6b", fontWeight: 700 }}>{calories} kcal</span>
-            </label>
-            <input type="range" min={300} max={900} value={calories} onChange={e => setCalories(+e.target.value)} style={{ width: "100%", accentColor: "#ff6b6b" }} />
+      </section>
+
+      {/* MOCK APP PREVIEW */}
+      <section className="mock-section">
+        <div className="mock-inner">
+          <div className="mock-cards">
+            {["🥗 Lemon Herb Chicken", "🍜 Asian Beef Bowl", "🥑 Salmon Avocado"].map((meal, i) => (
+              <div key={i} className="mock-card">
+                <div style={{ fontSize: 22, marginBottom: 10 }}>{meal.split(" ")[0]}</div>
+                <div style={{ fontSize: 13, color: "#fff", fontFamily: "sans-serif", fontWeight: 600, marginBottom: 6 }}>{meal.slice(3)}</div>
+                <div style={{ fontSize: 11, color: "#C9A84C", fontFamily: "sans-serif" }}>548 cal · 41g protein</div>
+                <div style={{ marginTop: 12, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {["Low Carb", "High Protein"].map(t => (
+                    <span key={t} style={{ fontSize: 9, background: "#C9A84C22", color: "#C9A84C", padding: "3px 8px", borderRadius: 10, fontFamily: "sans-serif", letterSpacing: 1 }}>{t}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
-          <div style={{ marginBottom: 18 }}>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#ccc", marginBottom: 7 }}>
-              💪 Protein: <span style={{ color: "#4ecdc4", fontWeight: 700 }}>{protein}g</span>
-            </label>
-            <input type="range" min={10} max={80} value={protein} onChange={e => setProtein(+e.target.value)} style={{ width: "100%", accentColor: "#4ecdc4" }} />
+        </div>
+      </section>
+
+      {/* STATS */}
+      <section className="stats">
+        {[["500+", "Meals Generated"], ["98%", "Client Retention"], ["4.9★", "Average Rating"]].map(([num, label]) => (
+          <div key={label} className="stat">
+            <div style={{ fontSize: 40, color: "#1a1a1a", fontWeight: 400, marginBottom: 8 }}>{num}</div>
+            <div style={{ fontSize: 11, color: "#aaa", letterSpacing: 2, textTransform: "uppercase", fontFamily: "sans-serif" }}>{label}</div>
           </div>
-          <div style={{ marginBottom: 18 }}>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#ccc", marginBottom: 7 }}>🥩 Key Ingredient</label>
-            <input type="text" placeholder="e.g. salmon, tofu, chicken..." value={ingredient} onChange={e => setIngredient(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 12, padding: "11px 14px", color: "#fff", fontSize: 14, boxSizing: "border-box" }} />
-          </div>
-          <div style={{ marginBottom: 22 }}>
-            <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#ccc", marginBottom: 7 }}>🌶️ Flavor Profile</label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-              {FLAVOR_PROFILES.map(f => (
-                <button key={f} onClick={() => setFlavor(f)} style={{ padding: "7px 13px", borderRadius: 20, fontSize: 12, cursor: "pointer", fontWeight: 600, background: flavor === f ? "#4ecdc4" : "rgba(255,255,255,0.07)", color: flavor === f ? "#000" : "#aaa", border: flavor === f ? "1px solid #4ecdc4" : "1px solid rgba(255,255,255,0.1)" }}>{f}</button>
-              ))}
+        ))}
+      </section>
+
+      <div style={{ borderTop: "1px solid #e8e4dc", maxWidth: 860, margin: "0 auto" }} />
+
+      {/* FEATURES */}
+      <section id="features" className="features">
+        <div style={{ textAlign: "center", marginBottom: 64 }}>
+          <div className="sublabel">What&apos;s Included</div>
+          <h2 style={{ fontSize: 34, fontWeight: 400, color: "#1a1a1a", margin: 0 }}>Everything you need to eat well</h2>
+        </div>
+        <div className="features-grid">
+          {[
+            ["🍽", "AI Meal Generator", "Tell us your macros. Get a perfectly matched meal in seconds."],
+            ["📅", "Weekly Planner", "Plan your full week across breakfast, lunch and dinner."],
+            ["🛒", "Smart Shopping List", "Ingredients compiled, grouped and ready to shop."],
+            ["📊", "Client Profile", "Your BMR and calorie goals via Harris-Benedict formula."],
+            ["❤️", "Save Favourites", "Build your personal library of go-to meals."],
+            ["📄", "PDF Download", "Download your weekly plan to keep, print or share."],
+          ].map(([icon, title, desc]) => (
+            <div key={title} className="feature-card">
+              <div style={{ fontSize: 24, marginBottom: 16 }}>{icon}</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "#1a1a1a", marginBottom: 10, fontFamily: "sans-serif" }}>{title}</div>
+              <div style={{ fontSize: 13, color: "#999", lineHeight: 1.8, fontFamily: "sans-serif" }}>{desc}</div>
             </div>
-          </div>
-          <button onClick={() => handleGenerate(false)} disabled={loading} style={{ width: "100%", padding: "15px", borderRadius: 14, border: "none", background: loading ? "#333" : "linear-gradient(135deg,#4ecdc4,#2bb5ad)", color: loading ? "#666" : "#000", fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer", marginBottom: 10, boxShadow: loading ? "none" : "0 8px 30px rgba(78,205,196,0.4)" }}>
-            {loading ? "✨ Generating..." : "🔍 Find My Meal"}
-          </button>
-          <button onClick={() => handleGenerate(true)} disabled={loading} style={{ width: "100%", padding: "13px", borderRadius: 14, background: "transparent", border: "1px solid rgba(255,107,107,0.4)", color: "#ff6b6b", fontSize: 14, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer" }}>
-            🎲 Surprise Me — AI Generate
-          </button>
-        </div>
-        {path && !loading && (
-          <div style={{ textAlign: "center", margin: "18px 0 8px" }}>
-            <span style={{ background: path === "DATABASE" ? "#00d4aa22" : "#ff6b6b22", border: `1px solid ${path === "DATABASE" ? "#00d4aa" : "#ff6b6b"}`, color: path === "DATABASE" ? "#00d4aa" : "#ff6b6b", padding: "5px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
-              {path === "DATABASE" ? "📚 Matched from your meal library" : "✨ AI-invented just for you"}
-            </span>
-          </div>
-        )}
-        {loading && <div style={{ textAlign: "center", padding: 28, color: "#4ecdc4", fontSize: 14 }}>✨ Crafting your perfect meal...</div>}
-        {error && <div style={{ background: "#ff6b6b22", border: "1px solid #ff6b6b44", borderRadius: 12, padding: 14, marginTop: 14, color: "#ff6b6b", fontSize: 13 }}>⚠️ {error}</div>}
-        <div style={{ marginTop: 18 }}>
-          {recipes.map((recipe, i) => (
-            <RecipeCard
-              key={i}
-              recipe={recipe}
-              flavor={flavor}
-              imageUrl={imageUrls[i] || getFallbackImage(flavor)}
-              isFavourite={isFavourite(recipe)}
-              onToggleFavourite={toggleFavourite}
-            />
           ))}
         </div>
-        {path === "DATABASE" && recipes.length > 0 && (
-          <div style={{ textAlign: "center", marginTop: 8 }}>
-            <button onClick={() => handleGenerate(true)} style={{ background: "none", border: "1px solid #4ecdc444", borderRadius: 12, color: "#4ecdc4", padding: "11px 22px", fontSize: 13, cursor: "pointer", fontWeight: 600 }}>
-              Not what you wanted? ✨ Let AI invent something new
-            </button>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section id="how-it-works" className="how">
+        <div className="how-inner">
+          <div className="sublabel">Simple Process</div>
+          <h2 style={{ fontSize: 34, fontWeight: 400, color: "#1a1a1a", marginBottom: 72 }}>Three steps to your perfect meal plan</h2>
+          <div className="how-steps">
+            {[
+              ["01", "Set Your Goals", "Enter your weight, height and target. We calculate your exact calorie and macro needs."],
+              ["02", "Generate Meals", "Our AI creates meals matched to your macros, preferences and key ingredients."],
+              ["03", "Plan Your Week", "Fill your 7-day planner and download your shopping list in one tap."],
+            ].map(([num, title, desc]) => (
+              <div key={num} className="how-step">
+                <div style={{ fontSize: 11, color: "#C9A84C", letterSpacing: 3, marginBottom: 16, fontFamily: "sans-serif", fontWeight: 700 }}>{num}</div>
+                <div style={{ width: 1, height: 32, background: "#e8e4dc", margin: "0 auto 20px" }} />
+                <div style={{ fontSize: 16, color: "#1a1a1a", marginBottom: 12, fontFamily: "sans-serif", fontWeight: 600 }}>{title}</div>
+                <div style={{ fontSize: 13, color: "#999", lineHeight: 1.8, fontFamily: "sans-serif" }}>{desc}</div>
+              </div>
+            ))}
           </div>
-        )}
-      </div>
-      <FavouritesSection favourites={favourites} onRemove={removeFavourite} />
-      <div style={{ textAlign: "center", marginTop: 48, paddingBottom: 16 }}>
-        <div style={{ fontSize: 13, color: "#ff6b6b", fontFamily: "Georgia, serif", fontWeight: 800, letterSpacing: 1 }}>HerCoachJess</div>
-        <div style={{ fontSize: 11, color: "#333", marginTop: 4 }}>Macro Meal Generator</div>
-      </div>
+        </div>
+      </section>
+
+      {/* PRICING */}
+      <section id="pricing" className="pricing">
+        <div className="sublabel">Pricing</div>
+        <h2 style={{ fontSize: 34, fontWeight: 400, color: "#1a1a1a", marginBottom: 56 }}>One simple plan</h2>
+        <div className="pricing-card">
+          <div className="sublabel">Monthly</div>
+          <div style={{ fontSize: 60, color: "#1a1a1a", marginBottom: 4, fontWeight: 300 }}>£<span style={{ fontFamily: "sans-serif" }}>19</span></div>
+          <div style={{ fontSize: 13, color: "#aaa", marginBottom: 40, fontFamily: "sans-serif" }}>per month · cancel anytime</div>
+          {["AI Meal Generator", "Weekly Planner", "Shopping List", "Client Profile & BMR", "PDF Downloads", "Save Favourites"].map(f => (
+            <div key={f} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, textAlign: "left" }}>
+              <span style={{ color: "#C9A84C", fontSize: 13, fontWeight: 700 }}>✓</span>
+              <span style={{ fontSize: 14, color: "#555", fontFamily: "sans-serif" }}>{f}</span>
+            </div>
+          ))}
+          <Link href="/login" className="btn-dark-full">Start Free Trial</Link>
+        </div>
+      </section>
+
+      {/* CTA BANNER */}
+      <section className="cta">
+        <div className="sublabel">Ready to start?</div>
+        <h2 style={{ fontSize: 36, fontWeight: 400, color: "#fff", marginBottom: 12 }}>Your perfect meal plan is waiting.</h2>
+        <p style={{ color: "#aaa", fontSize: 15, marginBottom: 40, fontFamily: "sans-serif" }}>Join hundreds of women eating smarter every week.</p>
+        <Link href="/login" className="btn-gold">Get Started Today</Link>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="footer">
+        <div style={{ fontSize: 18, color: "#1e2d4a", lineHeight: 1 }}>
+          <span style={{ fontStyle: "italic", fontWeight: 300 }}>her</span>
+          <span style={{ fontWeight: 800 }}>coach.</span>
+          <span style={{ color: "#C9A84C", fontFamily: "'Great Vibes', cursive", fontWeight: 400, fontSize: 16, marginLeft: 1, verticalAlign: "middle" }}>Jess</span>
+        </div>
+        <div style={{ fontSize: 12, color: "#bbb", fontFamily: "sans-serif" }}>© 2026 HerCoachJess. All rights reserved.</div>
+      </footer>
+
     </div>
   );
 }

@@ -11,17 +11,20 @@ export function proxy(request) {
     request.cookies.has(`sb-${projectRef}-auth-token.0`) ||
     request.cookies.has("supabase-auth-token");
 
-  if (!hasSession && pathname !== "/login") {
-    return NextResponse.redirect(new URL("/login", request.url));
+  // Redirect logged-in users away from login page
+  if (hasSession && pathname === "/login") {
+    return NextResponse.redirect(new URL("/generator", request.url));
   }
 
-  if (hasSession && pathname === "/login") {
-    return NextResponse.redirect(new URL("/", request.url));
+  // Redirect unauthenticated users to login (protect app routes)
+  if (!hasSession && pathname !== "/login") {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Public routes: landing page (/), login, static assets, preview-landing
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|preview-landing|$).+)"],
 };
