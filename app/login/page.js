@@ -1,12 +1,13 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "../../lib/supabase/client";
 
 export const dynamic = "force-dynamic";
 
 export default function LoginPage() {
-  const [mode, setMode] = useState("signin"); // "signin" | "signup"
+  const [mode, setMode] = useState("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,7 +27,7 @@ export default function LoginPage() {
       if (error) {
         setError(error.message);
       } else {
-        router.push("/");
+        router.push("/generator");
         router.refresh();
       }
     } else {
@@ -43,82 +44,151 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "radial-gradient(ellipse at top left,#0f0c29,#302b63,#24243e)", display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
-      <div style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(20px)", borderRadius: 24, padding: "48px 36px", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 30px 80px rgba(0,0,0,0.4)", textAlign: "center", maxWidth: 380, width: "100%" }}>
-        <div style={{ fontSize: 14, color: "#ff6b6b", letterSpacing: 2, textTransform: "uppercase", fontWeight: 800, marginBottom: 8, fontFamily: "Georgia, serif" }}>HerCoachJess</div>
-        <h1 style={{ fontSize: 26, fontFamily: "Georgia, serif", color: "#fff", margin: "0 0 6px", lineHeight: 1.2 }}>
-          Macro Meal<br /><span style={{ color: "#4ecdc4" }}>Generator</span>
-        </h1>
-        <p style={{ color: "#555", fontSize: 12, margin: "0 0 28px" }}>
-          {mode === "signin" ? "Sign in to your account" : "Create your account"}
-        </p>
+    <div style={{ fontFamily: "'Georgia', serif", minHeight: "100vh", background: "#fafaf8", color: "#1a1a1a" }}>
+      <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet" />
 
-        {/* Tab toggle */}
-        <div style={{ display: "flex", marginBottom: 24, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: 4 }}>
-          <button
-            onClick={() => { setMode("signin"); setError(null); setMessage(null); }}
-            style={{ flex: 1, padding: "9px 0", borderRadius: 9, border: "none", background: mode === "signin" ? "rgba(78,205,196,0.2)" : "transparent", color: mode === "signin" ? "#4ecdc4" : "#666", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
-          >
-            Sign In
-          </button>
-          <button
-            onClick={() => { setMode("signup"); setError(null); setMessage(null); }}
-            style={{ flex: 1, padding: "9px 0", borderRadius: 9, border: "none", background: mode === "signup" ? "rgba(78,205,196,0.2)" : "transparent", color: mode === "signup" ? "#4ecdc4" : "#666", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
-          >
-            Create Account
-          </button>
+      <style>{`
+        * { box-sizing: border-box; }
+        .login-input {
+          width: 100%;
+          background: #fff;
+          border: 1px solid #e8e4dc;
+          border-radius: 4px;
+          padding: 13px 16px;
+          color: #1a1a1a;
+          font-size: 14px;
+          font-family: sans-serif;
+          outline: none;
+          transition: border-color 0.2s;
+        }
+        .login-input:focus { border-color: #1e2d4a; }
+        .login-input::placeholder { color: #bbb; }
+        .tab-btn {
+          flex: 1;
+          padding: 10px 0;
+          border: none;
+          background: transparent;
+          font-size: 13px;
+          font-family: sans-serif;
+          font-weight: 600;
+          cursor: pointer;
+          letter-spacing: 0.5px;
+          border-bottom: 2px solid transparent;
+          transition: all 0.2s;
+          color: #aaa;
+        }
+        .tab-btn.active {
+          color: #1e2d4a;
+          border-bottom-color: #1e2d4a;
+        }
+        .submit-btn {
+          width: 100%;
+          padding: 15px;
+          border: none;
+          border-radius: 4px;
+          background: #1e2d4a;
+          color: #fff;
+          font-size: 13px;
+          font-weight: 700;
+          letter-spacing: 2px;
+          text-transform: uppercase;
+          font-family: sans-serif;
+          cursor: pointer;
+          transition: opacity 0.2s;
+          margin-top: 8px;
+        }
+        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .submit-btn:hover:not(:disabled) { opacity: 0.88; }
+      `}</style>
+
+      {/* NAV */}
+      <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 48px", borderBottom: "1px solid #e8e4dc", background: "#fff" }}>
+        <Link href="/" style={{ fontSize: 20, color: "#1e2d4a", lineHeight: 1, textDecoration: "none" }}>
+          <span style={{ fontStyle: "italic", fontWeight: 300 }}>her</span>
+          <span style={{ fontWeight: 800 }}>coach.</span>
+          <span style={{ color: "#C9A84C", fontFamily: "'Great Vibes', cursive", fontWeight: 400, fontSize: 16, marginLeft: 1, verticalAlign: "middle" }}>Jess</span>
+        </Link>
+      </nav>
+
+      {/* LOGIN CARD */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "80px 24px" }}>
+        <div style={{ background: "#fff", border: "1px solid #e8e4dc", borderRadius: 8, padding: "52px 48px", boxShadow: "0 4px 40px rgba(0,0,0,0.06)", width: "100%", maxWidth: 420 }}>
+
+          {/* Logo mark */}
+          <div style={{ textAlign: "center", marginBottom: 32 }}>
+            <div style={{ fontSize: 22, color: "#1e2d4a", lineHeight: 1, marginBottom: 10 }}>
+              <span style={{ fontStyle: "italic", fontWeight: 300 }}>her</span>
+              <span style={{ fontWeight: 800 }}>coach.</span>
+              <span style={{ color: "#C9A84C", fontFamily: "'Great Vibes', cursive", fontWeight: 400, fontSize: 18, marginLeft: 1, verticalAlign: "middle" }}>Jess</span>
+            </div>
+            <div style={{ fontSize: 11, color: "#C9A84C", letterSpacing: 3, textTransform: "uppercase", fontFamily: "sans-serif", fontWeight: 700 }}>
+              AI-Powered Nutrition
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div style={{ display: "flex", marginBottom: 32, borderBottom: "1px solid #e8e4dc" }}>
+            <button className={`tab-btn${mode === "signin" ? " active" : ""}`} onClick={() => { setMode("signin"); setError(null); setMessage(null); }}>
+              Sign In
+            </button>
+            <button className={`tab-btn${mode === "signup" ? " active" : ""}`} onClick={() => { setMode("signup"); setError(null); setMessage(null); }}>
+              Create Account
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#888", marginBottom: 7, letterSpacing: 1, textTransform: "uppercase", fontFamily: "sans-serif" }}>Email</label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="login-input"
+              />
+            </div>
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: "#888", marginBottom: 7, letterSpacing: 1, textTransform: "uppercase", fontFamily: "sans-serif" }}>Password</label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                minLength={6}
+                className="login-input"
+              />
+            </div>
+
+            {error && (
+              <div style={{ background: "rgba(220,53,53,0.06)", border: "1px solid rgba(220,53,53,0.25)", borderRadius: 4, padding: "11px 14px", marginBottom: 16, color: "#c0392b", fontSize: 13, fontFamily: "sans-serif" }}>
+                {error}
+              </div>
+            )}
+            {message && (
+              <div style={{ background: "rgba(201,168,76,0.08)", border: "1px solid rgba(201,168,76,0.35)", borderRadius: 4, padding: "11px 14px", marginBottom: 16, color: "#9a7a28", fontSize: 13, fontFamily: "sans-serif" }}>
+                {message}
+              </div>
+            )}
+
+            <button type="submit" disabled={loading} className="submit-btn">
+              {loading ? "Please wait..." : mode === "signin" ? "Sign In" : "Create Account"}
+            </button>
+          </form>
+
+          {mode === "signup" && (
+            <p style={{ color: "#bbb", fontSize: 12, marginTop: 20, lineHeight: 1.7, textAlign: "center", fontFamily: "sans-serif" }}>
+              You&apos;ll receive a confirmation email before your account is activated.
+            </p>
+          )}
+
+          <div style={{ textAlign: "center", marginTop: 28 }}>
+            <Link href="/" style={{ fontSize: 12, color: "#aaa", fontFamily: "sans-serif", textDecoration: "none" }}>
+              ← Back to home
+            </Link>
+          </div>
         </div>
-
-        <form onSubmit={handleSubmit} style={{ textAlign: "left" }}>
-          <div style={{ marginBottom: 14 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#aaa", marginBottom: 6 }}>Email</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              style={{ width: "100%", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 14, boxSizing: "border-box" }}
-            />
-          </div>
-          <div style={{ marginBottom: 22 }}>
-            <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#aaa", marginBottom: 6 }}>Password</label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••"
-              minLength={6}
-              style={{ width: "100%", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 14, boxSizing: "border-box" }}
-            />
-          </div>
-
-          {error && (
-            <div style={{ background: "#ff6b6b22", border: "1px solid #ff6b6b44", borderRadius: 10, padding: "10px 14px", marginBottom: 14, color: "#ff6b6b", fontSize: 13 }}>
-              {error}
-            </div>
-          )}
-          {message && (
-            <div style={{ background: "#4ecdc422", border: "1px solid #4ecdc444", borderRadius: 10, padding: "10px 14px", marginBottom: 14, color: "#4ecdc4", fontSize: 13 }}>
-              {message}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{ width: "100%", padding: "14px", borderRadius: 14, border: "none", background: loading ? "#333" : "linear-gradient(135deg,#4ecdc4,#2bb5ad)", color: loading ? "#666" : "#000", fontSize: 15, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer", boxShadow: loading ? "none" : "0 8px 30px rgba(78,205,196,0.3)" }}
-          >
-            {loading ? "..." : mode === "signin" ? "Sign In" : "Create Account"}
-          </button>
-        </form>
-
-        {mode === "signup" && (
-          <p style={{ color: "#444", fontSize: 11, marginTop: 20, lineHeight: 1.6 }}>
-            You&apos;ll receive a confirmation email before your account is activated.
-          </p>
-        )}
       </div>
     </div>
   );
