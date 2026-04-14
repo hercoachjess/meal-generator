@@ -1,16 +1,24 @@
 import { NextResponse } from "next/server";
 
 export async function POST(request) {
-  const { calories, protein, ingredient, flavorProfile, dietaryPrefs, allergens, avoidMeals } = await request.json();
+  const { calories, protein, ingredient, flavorProfile, dietaryPrefs, allergens, avoidMeals, mealFilters } = await request.json();
 
   const restrictions = [];
   if (dietaryPrefs?.length) restrictions.push(`Dietary style: ${dietaryPrefs.join(", ")}`);
   if (allergens?.length) restrictions.push(`STRICTLY avoid these allergens in every ingredient: ${allergens.join(", ")}`);
   if (avoidMeals?.length) restrictions.push(`Do NOT suggest any of these meals (user has had them recently): ${avoidMeals.join(", ")}`);
 
-  const restrictionNote = restrictions.length
-    ? ` IMPORTANT — ${restrictions.join(". ")}.`
-    : "";
+  const filters = [];
+  if (mealFilters?.mealType) filters.push(`This is a ${mealFilters.mealType} meal`);
+  if (mealFilters?.prepTime) filters.push(`Prep + cook time must be ${mealFilters.prepTime}`);
+  if (mealFilters?.temp === "Warm") filters.push("Must be a warm/hot dish — nothing cold or raw");
+  if (mealFilters?.temp === "Cold") filters.push("Must be a cold or room-temperature dish — no cooking required");
+  if (mealFilters?.style) filters.push(`The dish format should be: ${mealFilters.style}`);
+  if (mealFilters?.portion === "Light") filters.push("Keep this light and easy to digest — smaller portion");
+  if (mealFilters?.portion === "Hearty") filters.push("Make this filling and satisfying — a hearty full meal");
+
+  const allNotes = [...restrictions, ...filters];
+  const restrictionNote = allNotes.length ? ` IMPORTANT — ${allNotes.join(". ")}.` : "";
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",

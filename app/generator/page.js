@@ -345,17 +345,52 @@ function RecipeCard({ recipe, flavor, imageUrl, isFavourite, onToggleFavourite, 
   );
 }
 
+const MEAL_FILTER_GROUPS = [
+  {
+    key: "mealType",
+    label: "Meal Type",
+    options: ["Breakfast", "Brunch", "Lunch", "Dinner", "Snack", "Post-Workout", "Pre-Workout"],
+  },
+  {
+    key: "prepTime",
+    label: "Prep Time",
+    options: ["Under 10 mins", "Under 20 mins", "Under 30 mins", "Meal Prep Friendly"],
+  },
+  {
+    key: "temp",
+    label: "Temperature",
+    options: ["Warm", "Cold"],
+  },
+  {
+    key: "style",
+    label: "Meal Style",
+    options: ["Bowl", "Wrap / Sandwich", "Salad", "Soup / Stew", "Stir-fry", "Baked / Roasted", "Eggs", "Smoothie"],
+  },
+  {
+    key: "portion",
+    label: "Portion Size",
+    options: ["Light", "Standard", "Hearty"],
+  },
+];
+
 // ── Tab: Generate Meal ───────────────────────────────────────────────────────
 function GenerateTab({ profile, favourites, setFavourites, genOptions }) {
   const [calories, setCalories] = useState(profile?.calories || 550);
   const [protein, setProtein] = useState(profile?.protein || 40);
   const [ingredient, setIngredient] = useState("");
   const [flavor, setFlavor] = useState("Mediterranean");
+  const [mealFilters, setMealFilters] = useState({});
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [path, setPath] = useState(null);
   const [recipes, setRecipes] = useState([]);
   const [imageUrls, setImageUrls] = useState({});
   const [error, setError] = useState(null);
+
+  function toggleFilter(key, value) {
+    setMealFilters(prev => ({ ...prev, [key]: prev[key] === value ? undefined : value }));
+  }
+  const activeFilterCount = Object.values(mealFilters).filter(Boolean).length;
 
   useEffect(() => {
     if (profile?.calories) { setCalories(profile.calories); setProtein(profile.protein); }
@@ -387,6 +422,7 @@ function GenerateTab({ profile, favourites, setFavourites, genOptions }) {
         dietaryPrefs: genOptions?.dietaryPrefs,
         allergens: genOptions?.allergens,
         avoidMeals: getAvoidList(),
+        mealFilters,
       });
       trackRecentMeal(recipe.name);
       setRecipes([recipe]);
@@ -418,6 +454,50 @@ function GenerateTab({ profile, favourites, setFavourites, genOptions }) {
             ))}
           </div>
         </div>
+        {/* Meal filters accordion */}
+        <div style={{ marginBottom: 24, border: "1px solid #e8e4dc", borderRadius: 6, overflow: "hidden" }}>
+          <button
+            onClick={() => setFiltersOpen(o => !o)}
+            style={{ width: "100%", background: filtersOpen ? "#fafaf8" : "#fff", border: "none", padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+          >
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#888", letterSpacing: 1, textTransform: "uppercase", fontFamily: "sans-serif", display: "flex", alignItems: "center", gap: 8 }}>
+              More Options
+              {activeFilterCount > 0 && (
+                <span style={{ background: "#1e2d4a", color: "#fff", borderRadius: 10, fontSize: 10, padding: "1px 7px", fontWeight: 700 }}>{activeFilterCount} active</span>
+              )}
+            </span>
+            <span style={{ fontSize: 11, color: "#aaa", fontFamily: "sans-serif" }}>{filtersOpen ? "▲" : "▼"}</span>
+          </button>
+          {filtersOpen && (
+            <div style={{ padding: "16px 16px 20px", borderTop: "1px solid #f0ece4" }}>
+              {MEAL_FILTER_GROUPS.map(group => (
+                <div key={group.key} style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "#C9A84C", letterSpacing: 1.5, textTransform: "uppercase", fontFamily: "sans-serif", marginBottom: 8 }}>{group.label}</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {group.options.map(opt => {
+                      const active = mealFilters[group.key] === opt;
+                      return (
+                        <button
+                          key={opt}
+                          onClick={() => toggleFilter(group.key, opt)}
+                          style={{ padding: "6px 12px", borderRadius: 20, fontSize: 11, cursor: "pointer", fontWeight: 600, fontFamily: "sans-serif", border: `1px solid ${active ? "#1e2d4a" : "#e8e4dc"}`, background: active ? "#1e2d4a" : "#fff", color: active ? "#fff" : "#888", transition: "all 0.15s" }}
+                        >
+                          {opt}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              {activeFilterCount > 0 && (
+                <button onClick={() => setMealFilters({})} style={{ marginTop: 4, background: "none", border: "none", fontSize: 11, color: "#aaa", cursor: "pointer", fontFamily: "sans-serif", textDecoration: "underline", padding: 0 }}>
+                  Clear all filters
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
         <button onClick={() => handleGenerate(false)} disabled={loading} style={{ width: "100%", padding: "14px", border: "none", borderRadius: 4, background: loading ? "#ccc" : "#1e2d4a", color: "#fff", fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", fontFamily: "sans-serif", cursor: loading ? "not-allowed" : "pointer", marginBottom: 10 }}>
           {loading ? "Finding your meal..." : "Find My Meal"}
         </button>
