@@ -22,10 +22,10 @@ export async function POST(request) {
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
       max_tokens: 1000,
-      system: `You are a culinary AI and nutritionist. Respond ONLY with valid JSON, no markdown, no extra text. Schema: {"name":"string","tagline":"string","calories":number,"protein":number,"carbs":number,"fat":number,"ingredients":[{"item":"string","amount":"string"}],"steps":["string"]}`,
+      system: `You are a culinary AI and nutritionist. Respond ONLY with valid JSON, no markdown, no extra text. IMPORTANT: All ingredient amounts MUST use metric measurements only — grams (g) for solids and millilitres (ml) for liquids. Never use cups, tablespoons, teaspoons, oz, lbs, or any non-metric units. Schema: {"name":"string","tagline":"string","calories":number,"protein":number,"carbs":number,"fat":number,"ingredients":[{"item":"string","amount":"string"}],"steps":["string"]}`,
       messages: [{
         role: "user",
-        content: `Create a single-serving recipe. Calories: ${calories}kcal, Protein: ${protein}g, Must include: ${ingredient}, Flavour: ${flavorProfile}.${restrictionNote} Return only valid JSON.`,
+        content: `Create a single-serving recipe using metric measurements only (grams and ml). Calories: ${calories}kcal, Protein: ${protein}g, Must include: ${ingredient}, Flavour: ${flavorProfile}.${restrictionNote} Return only valid JSON.`,
       }],
     }),
   });
