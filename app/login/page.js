@@ -23,11 +23,25 @@ export default function LoginPage() {
     const supabase = createClient();
 
     if (mode === "signin") {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         setError(error.message);
       } else {
-        router.push("/generator");
+        const user = signInData?.user;
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("onboarding_completed")
+            .eq("user_id", user.id)
+            .single();
+          if (!profile || !profile.onboarding_completed) {
+            router.push("/onboarding");
+          } else {
+            router.push("/generator");
+          }
+        } else {
+          router.push("/generator");
+        }
         router.refresh();
       }
     } else {
