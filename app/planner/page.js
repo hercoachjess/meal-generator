@@ -8,6 +8,7 @@ import { createClient } from "../../lib/supabase/client";
 const MEAL_TYPES = ["Breakfast", "Lunch", "Dinner"];
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const FLAVOR_PROFILES = ["Mediterranean", "Spicy", "Comfort Food", "Asian", "High Protein", "Vegetarian"];
+const SHOP_COLOR = "#2d7a4f";
 
 function getWeekDates(offset) {
   const now = new Date();
@@ -54,7 +55,7 @@ async function fetchGoogleImage(recipeName, flavor) {
   }
 }
 
-function MealSlot({ dateKey, mealType, slotData, onAdd, onClear }) {
+function MealSlot({ dateKey, mealType, slotData, onAdd, onClear, isInShopList, onToggleShop }) {
   if (!slotData) {
     return (
       <div
@@ -69,7 +70,7 @@ function MealSlot({ dateKey, mealType, slotData, onAdd, onClear }) {
   }
 
   return (
-    <div style={{ minHeight: 68, background: "#fff", border: "1px solid #e8e4dc", borderRadius: 6, padding: "8px 10px", position: "relative" }}>
+    <div style={{ minHeight: 68, background: isInShopList ? "rgba(45,122,79,0.04)" : "#fff", border: `1px solid ${isInShopList ? "rgba(45,122,79,0.35)" : "#e8e4dc"}`, borderRadius: 6, padding: "8px 10px", position: "relative", transition: "all 0.15s" }}>
       <button
         onClick={onClear}
         style={{ position: "absolute", top: 4, right: 6, background: "none", border: "none", color: "#ccc", fontSize: 16, cursor: "pointer", lineHeight: 1, padding: 0 }}
@@ -78,9 +79,16 @@ function MealSlot({ dateKey, mealType, slotData, onAdd, onClear }) {
       <div style={{ fontSize: 11, fontWeight: 600, color: "#1e2d4a", lineHeight: 1.35, marginBottom: 5, paddingRight: 14, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", fontFamily: "sans-serif" }}>
         {slotData.recipe.name}
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
-        <span style={{ fontSize: 9, background: "rgba(30,45,74,0.08)", color: "#1e2d4a", padding: "2px 6px", borderRadius: 10, fontFamily: "sans-serif", fontWeight: 700 }}>{slotData.recipe.calories} cal</span>
-        <span style={{ fontSize: 9, background: "rgba(201,168,76,0.12)", color: "#9a7a28", padding: "2px 6px", borderRadius: 10, fontFamily: "sans-serif", fontWeight: 700 }}>{slotData.recipe.protein}g P</span>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 3 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+          <span style={{ fontSize: 9, background: "rgba(30,45,74,0.08)", color: "#1e2d4a", padding: "2px 6px", borderRadius: 10, fontFamily: "sans-serif", fontWeight: 700 }}>{slotData.recipe.calories} cal</span>
+          <span style={{ fontSize: 9, background: "rgba(201,168,76,0.12)", color: "#9a7a28", padding: "2px 6px", borderRadius: 10, fontFamily: "sans-serif", fontWeight: 700 }}>{slotData.recipe.protein}g P</span>
+        </div>
+        <button
+          onClick={e => { e.stopPropagation(); onToggleShop(); }}
+          title={isInShopList ? "Remove from shopping list" : "Add to shopping list"}
+          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, opacity: isInShopList ? 1 : 0.35, color: SHOP_COLOR, padding: "0 2px", lineHeight: 1 }}
+        >🛒</button>
       </div>
     </div>
   );
@@ -329,6 +337,139 @@ function downloadPDF(weekDates, plannerSlots, weekOffset) {
   doc.save(`meal-plan-${weekDates[0]}.pdf`);
 }
 
+function downloadShoppingPDF(items) {
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  doc.setFillColor(30, 45, 74);
+  doc.rect(0, 0, 210, 28, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "italic");
+  doc.text("her", 14, 17);
+  doc.setFont("helvetica", "bold");
+  doc.text("coach.", 26, 17);
+  doc.setTextColor(201, 168, 76);
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "normal");
+  doc.text("Jess", 58, 17);
+  doc.setTextColor(200, 200, 200);
+  doc.setFontSize(9);
+  doc.text("Weekly Shopping List", 140, 17);
+
+  doc.setTextColor(30, 45, 74);
+  doc.setFontSize(15);
+  doc.setFont("helvetica", "bold");
+  doc.text("Shopping List", 14, 42);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(150, 150, 150);
+  doc.text(new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" }), 14, 50);
+
+  const byMeal = {};
+  items.forEach(i => { if (!byMeal[i.meal]) byMeal[i.meal] = []; byMeal[i.meal].push(i); });
+
+  let y = 62;
+  Object.entries(byMeal).forEach(([meal, ings]) => {
+    if (y > 260) { doc.addPage(); y = 20; }
+    doc.setFillColor(45, 122, 79);
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.roundedRect(14, y, 60, 7, 2, 2, "F");
+    doc.text(meal.toUpperCase(), 16, y + 5);
+    y += 12;
+    ings.forEach(({ item, amount }) => {
+      if (y > 270) { doc.addPage(); y = 20; }
+      doc.setDrawColor(45, 122, 79);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(14, y - 4, 5, 5, 1, 1, "S");
+      doc.setTextColor(50, 50, 50);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.text(item, 22, y);
+      doc.setTextColor(130, 130, 130);
+      doc.text(amount, 150, y);
+      y += 8;
+    });
+    y += 4;
+  });
+
+  doc.setTextColor(201, 168, 76);
+  doc.setFontSize(8);
+  doc.text("Generated by hercoach.Jess — AI-Powered Nutrition", 14, 285);
+  doc.save(`shopping-list-weekly-${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
+function PlannerShoppingList({ plannerSlots, shopSelected, setShopSelected }) {
+  const [open, setOpen] = useState(false);
+  const [checked, setChecked] = useState({});
+
+  const items = [];
+  shopSelected.forEach(slotKey => {
+    const data = plannerSlots[slotKey];
+    if (!data?.recipe?.ingredients) return;
+    const parts = slotKey.split("_");
+    const mealType = parts[parts.length - 1];
+    const date = parts.slice(0, 3).join("-");
+    const label = `${mealType} (${new Date(date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })})`;
+    const ings = Array.isArray(data.recipe.ingredients) ? data.recipe.ingredients : [];
+    ings.forEach(ing => items.push({ item: ing.item, amount: ing.amount, meal: label }));
+  });
+
+  if (!shopSelected.size) return null;
+
+  function toggle(key) { setChecked(prev => ({ ...prev, [key]: !prev[key] })); }
+
+  const byMeal = {};
+  items.forEach((it, idx) => { if (!byMeal[it.meal]) byMeal[it.meal] = []; byMeal[it.meal].push({ ...it, idx }); });
+
+  return (
+    <div style={{ maxWidth: 1000, margin: "24px auto 0", padding: "0 24px" }}>
+      <div style={{ border: `1px solid rgba(45,122,79,0.3)`, borderRadius: 8, overflow: "hidden", background: "#fff" }}>
+        <button
+          onClick={() => setOpen(!open)}
+          style={{ width: "100%", background: open ? "rgba(45,122,79,0.06)" : "#fff", border: "none", padding: "16px 22px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+        >
+          <span style={{ fontSize: 14, fontWeight: 700, color: SHOP_COLOR, fontFamily: "sans-serif", display: "flex", alignItems: "center", gap: 8 }}>
+            🛒 Shopping List — {shopSelected.size} meal{shopSelected.size !== 1 ? "s" : ""} · {items.length} items
+          </span>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <button
+              onClick={e => { e.stopPropagation(); setShopSelected(new Set()); }}
+              style={{ background: "none", border: "1px solid rgba(45,122,79,0.3)", borderRadius: 4, padding: "4px 10px", fontSize: 10, color: SHOP_COLOR, cursor: "pointer", fontFamily: "sans-serif", fontWeight: 700, letterSpacing: 0.5 }}
+            >Clear</button>
+            <span style={{ fontSize: 11, color: SHOP_COLOR, fontFamily: "sans-serif", opacity: 0.7 }}>{open ? "▲" : "▼"}</span>
+          </div>
+        </button>
+
+        {open && (
+          <div style={{ padding: "0 22px 22px", borderTop: `1px solid rgba(45,122,79,0.15)` }}>
+            {Object.entries(byMeal).map(([meal, ings]) => (
+              <div key={meal} style={{ marginTop: 18 }}>
+                <div style={{ display: "inline-block", background: SHOP_COLOR, color: "#fff", borderRadius: 10, padding: "3px 10px", fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5, fontFamily: "sans-serif", marginBottom: 10 }}>{meal}</div>
+                {ings.map(({ item, amount, idx }) => (
+                  <div key={idx} onClick={() => toggle(idx)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 4px", borderBottom: "1px solid rgba(45,122,79,0.08)", cursor: "pointer" }}>
+                    <div style={{ width: 16, height: 16, borderRadius: 3, border: `2px solid ${checked[idx] ? SHOP_COLOR : "#ccc"}`, background: checked[idx] ? SHOP_COLOR : "transparent", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {checked[idx] && <span style={{ color: "#fff", fontSize: 10, lineHeight: 1 }}>✓</span>}
+                    </div>
+                    <span style={{ flex: 1, fontSize: 13, color: checked[idx] ? "#bbb" : "#444", fontFamily: "sans-serif", textDecoration: checked[idx] ? "line-through" : "none" }}>{item}</span>
+                    <span style={{ fontSize: 12, color: checked[idx] ? "#ccc" : SHOP_COLOR, fontFamily: "sans-serif", fontWeight: 600 }}>{amount}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+            <button
+              onClick={() => downloadShoppingPDF(items)}
+              style={{ marginTop: 20, width: "100%", padding: "12px", border: "none", borderRadius: 4, background: SHOP_COLOR, color: "#fff", fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", fontFamily: "sans-serif", cursor: "pointer" }}
+            >
+              ↓ Download Shopping List PDF
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function PlannerPage() {
   const [user, setUser] = useState(null);
   const router = useRouter();
@@ -336,6 +477,16 @@ export default function PlannerPage() {
   const [plannerSlots, setPlannerSlots] = useState({});
   const [favourites, setFavourites] = useState([]);
   const [modalTarget, setModalTarget] = useState(null);
+  const [shopSelected, setShopSelected] = useState(new Set());
+
+  function toggleShop(slotKey) {
+    setShopSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(slotKey)) next.delete(slotKey);
+      else next.add(slotKey);
+      return next;
+    });
+  }
 
   const weekDates = getWeekDates(weekOffset);
 
@@ -476,7 +627,9 @@ export default function PlannerPage() {
                     mealType={mealType}
                     slotData={plannerSlots[slotKey] || null}
                     onAdd={() => setModalTarget({ dateKey, mealType })}
-                    onClear={() => clearSlot(dateKey, mealType)}
+                    onClear={() => { clearSlot(dateKey, mealType); setShopSelected(prev => { const n = new Set(prev); n.delete(slotKey); return n; }); }}
+                    isInShopList={shopSelected.has(slotKey)}
+                    onToggleShop={() => toggleShop(slotKey)}
                   />
                 );
               })}
@@ -503,6 +656,9 @@ export default function PlannerPage() {
           </div>
         </div>
       </div>
+
+      {/* Shopping List */}
+      <PlannerShoppingList plannerSlots={plannerSlots} shopSelected={shopSelected} setShopSelected={setShopSelected} />
 
       {/* Footer */}
       <footer style={{ background: "#fff", borderTop: "1px solid #e8e4dc", padding: "28px 48px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginTop: 40 }}>
