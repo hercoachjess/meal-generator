@@ -162,6 +162,7 @@ function Nav({ user, onSignOut }) {
       </Link>
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
         <Link href="/planner" style={{ fontSize: 12, color: "#555", fontFamily: "sans-serif", textDecoration: "none", letterSpacing: 0.5 }}>Weekly Planner</Link>
+        <Link href="/profile" style={{ fontSize: 12, color: "#555", fontFamily: "sans-serif", textDecoration: "none", letterSpacing: 0.5 }}>My Profile</Link>
         {user && (
           <>
             <span style={{ fontSize: 12, color: "#bbb", fontFamily: "sans-serif" }}>{user.email}</span>
@@ -195,7 +196,20 @@ export default function GeneratorPage() {
       setFavourites(saved);
     } catch { /* ignore */ }
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      setUser(user);
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("calories, protein, carbs, fat, name")
+          .eq("user_id", user.id)
+          .single();
+        if (profile?.calories) {
+          setCalories(profile.calories);
+          setProtein(profile.protein);
+        }
+      }
+    });
   }, []);
 
   async function handleSignOut() {

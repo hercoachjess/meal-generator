@@ -15,7 +15,7 @@ export async function GET(request) {
     return NextResponse.json({ imageUrl: null, error: "Google API not configured" }, { status: 500 });
   }
 
-  const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(query + " food recipe plated")}&searchType=image&num=1&safe=active&imgType=photo&imgSize=large`;
+  const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(query + " food photography plated dish")}&searchType=image&num=1&safe=active&imgType=photo&imgSize=large&imgColorType=color`;
 
   const response = await fetch(url);
   const data = await response.json();
