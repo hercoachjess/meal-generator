@@ -60,6 +60,220 @@ function calcStreak() {
   } catch { return 0; }
 }
 
+// ── Achievements ─────────────────────────────────────────────────────────────
+const ACHIEVEMENTS = [
+  { id: "first_meal",      icon: "🍽️", title: "First Recipe",        desc: "Generated your very first meal" },
+  { id: "first_fav",       icon: "❤️",  title: "Hearted",             desc: "Saved your first favourite meal" },
+  { id: "five_favs",       icon: "💝",  title: "Meal Collector",      desc: "Saved 5 favourite meals" },
+  { id: "ten_favs",        icon: "🌟",  title: "Meal Enthusiast",     desc: "Saved 10 favourite meals" },
+  { id: "full_day",        icon: "✅",  title: "Day Sorted",          desc: "Planned all 3 meals in one day" },
+  { id: "macros_set",      icon: "📊",  title: "Macro Maven",         desc: "Set up your personalised targets" },
+  { id: "streak_3",        icon: "🔥",  title: "On Fire",             desc: "3 day planning streak" },
+  { id: "streak_7",        icon: "💪",  title: "Week Warrior",        desc: "7 day planning streak" },
+  { id: "streak_14",       icon: "⭐",  title: "Consistency Queen",   desc: "14 day planning streak" },
+  { id: "streak_30",       icon: "👑",  title: "Habit Formed",        desc: "30 day streak — incredible!" },
+  { id: "preferences_set", icon: "🎯",  title: "Personalised",        desc: "Set your dietary preferences" },
+  { id: "progress_start",  icon: "📈",  title: "Progress Tracker",    desc: "Started your progress log" },
+];
+
+const GOAL_TIPS = {
+  lose: [
+    "Protein keeps you full and fuelled — hit that target.",
+    "Every healthy meal is a step closer to your goal.",
+    "Consistency over perfection, always.",
+    "Small daily changes create big long-term results.",
+    "You don't have to be perfect, just consistent.",
+  ],
+  build: [
+    "Muscle is built in the kitchen as much as the gym.",
+    "Fuel your gains — protein is your best friend today.",
+    "Eat to perform, perform to build.",
+    "Recovery starts with what you eat. Make it count.",
+    "Progressive nutrition builds progressive results.",
+  ],
+  maintain: [
+    "Balance is your superpower. You've found the sweet spot.",
+    "Consistency is the key to lasting results.",
+    "You're building a lifestyle, not following a diet.",
+    "Steady wins the race. You're doing brilliantly.",
+    "Maintenance is an achievement — don't underestimate it.",
+  ],
+  default: [
+    "Fuel your body, achieve your goals.",
+    "Every great journey starts with a single meal.",
+    "Consistency is the key to transformation.",
+    "Small steps, taken every day, lead somewhere incredible.",
+  ],
+};
+
+function checkAchievements(profile, streak, todaySlots) {
+  try {
+    const favs = JSON.parse(localStorage.getItem("mealFavourites") || "[]");
+    const recents = JSON.parse(localStorage.getItem("recentMeals") || "[]");
+    const today = new Date().toISOString().slice(0, 10);
+    return {
+      first_meal:      recents.length >= 1,
+      first_fav:       favs.length >= 1,
+      five_favs:       favs.length >= 5,
+      ten_favs:        favs.length >= 10,
+      full_day:        ["Breakfast","Lunch","Dinner"].every(m => todaySlots?.[`${today}_${m}`]),
+      macros_set:      !!(profile?.calories),
+      preferences_set: !!(profile?.dietary_pref),
+      streak_3:        streak >= 3,
+      streak_7:        streak >= 7,
+      streak_14:       streak >= 14,
+      streak_30:       streak >= 30,
+      progress_start:  false, // checked separately via Supabase
+    };
+  } catch { return {}; }
+}
+
+// ── Circular Macro Ring ───────────────────────────────────────────────────────
+function MacroRing({ label, value, target, color }) {
+  const r = 26;
+  const circ = 2 * Math.PI * r;
+  const pct = target > 0 ? Math.min(value / target, 1) : 0;
+  const over = target > 0 && value > target;
+  return (
+    <div style={{ textAlign: "center" }}>
+      <svg width="68" height="68" viewBox="0 0 68 68" style={{ display: "block", margin: "0 auto" }}>
+        <circle cx="34" cy="34" r={r} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="5" />
+        <circle cx="34" cy="34" r={r} fill="none"
+          stroke={over ? "#ef4444" : color}
+          strokeWidth="5"
+          strokeDasharray={`${circ * pct} ${circ}`}
+          strokeLinecap="round"
+          transform="rotate(-90 34 34)"
+          style={{ transition: "stroke-dasharray 0.7s ease" }}
+        />
+        <text x="34" y="38" textAnchor="middle" fontSize="12" fontWeight="700" fill="#fff" fontFamily="Georgia, serif">{value}</text>
+      </svg>
+      <div style={{ fontSize: 9, color, textTransform: "uppercase", letterSpacing: 1.5, marginTop: 3, fontFamily: "sans-serif", fontWeight: 700 }}>{label}</div>
+      <div style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontFamily: "sans-serif", marginTop: 1 }}>/ {target}</div>
+    </div>
+  );
+}
+
+// ── Dashboard Panel ───────────────────────────────────────────────────────────
+function DashboardPanel({ profile, todayEaten, streak, unlockedIds, plannerSlots, favouriteCount }) {
+  const h = new Date().getHours();
+  const firstName = profile?.name ? profile.name.split(" ")[0] : null;
+  const greeting = (h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening") + (firstName ? `, ${firstName}` : "");
+  const timeIcon = h < 12 ? "☀️" : h < 17 ? "🌤️" : "🌙";
+
+  const tips = GOAL_TIPS[profile?.goal] || GOAL_TIPS.default;
+  const tip = tips[new Date().getDate() % tips.length];
+
+  const today = new Date().toISOString().slice(0, 10);
+  const mealsToday = ["Breakfast","Lunch","Dinner"].filter(m => plannerSlots[`${today}_${m}`]).length;
+  const targets = { calories: profile?.calories || 0, protein: profile?.protein || 0, carbs: profile?.carbs || 0, fat: profile?.fat || 0 };
+  const hasTargets = targets.calories > 0;
+
+  return (
+    <div style={{ background: "linear-gradient(135deg, #1a2840 0%, #243558 60%, #1e3050 100%)", borderBottom: "3px solid rgba(201,168,76,0.25)" }}>
+      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "32px 24px 28px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 28, flexWrap: "wrap" }}>
+
+          {/* Left: greeting + quote */}
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <div style={{ width: 28, height: 2, background: "#C9A84C", borderRadius: 2 }} />
+              <span style={{ fontSize: 9, color: "#C9A84C", letterSpacing: 4, textTransform: "uppercase", fontFamily: "sans-serif", fontWeight: 700 }}>Dashboard</span>
+            </div>
+            <h2 style={{ fontSize: "clamp(18px,3vw,26px)", fontWeight: 400, color: "#fff", margin: "0 0 5px", fontFamily: "Georgia, serif", lineHeight: 1.2 }}>
+              {greeting} {timeIcon}
+            </h2>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: "sans-serif", marginBottom: 18, letterSpacing: 0.3 }}>
+              {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            </div>
+            {tip && (
+              <div style={{ borderLeft: "2px solid rgba(201,168,76,0.6)", paddingLeft: 12 }}>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", fontFamily: "Georgia, serif", fontStyle: "italic", lineHeight: 1.65 }}>
+                  &ldquo;{tip}&rdquo;
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right: macro rings */}
+          {hasTargets && (
+            <div style={{ display: "flex", gap: 18, flexShrink: 0 }}>
+              <MacroRing label="Cal"     value={todayEaten.calories} target={targets.calories} color="rgba(255,255,255,0.9)" />
+              <MacroRing label="Protein" value={todayEaten.protein}  target={targets.protein}  color="#C9A84C" />
+              <MacroRing label="Carbs"   value={todayEaten.carbs}    target={targets.carbs}    color="#7ab8e8" />
+              <MacroRing label="Fat"     value={todayEaten.fat}      target={targets.fat}      color="#8ec99a" />
+            </div>
+          )}
+          {!hasTargets && (
+            <Link href="/profile" style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(201,168,76,0.12)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 8, padding: "14px 18px", textDecoration: "none", flexShrink: 0 }}>
+              <span style={{ fontSize: 20 }}>📊</span>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#C9A84C", fontFamily: "sans-serif" }}>Set Up Your Macros</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "sans-serif", marginTop: 2 }}>Get personalised targets →</div>
+              </div>
+            </Link>
+          )}
+        </div>
+
+        {/* Stat pills */}
+        <div style={{ display: "flex", gap: 8, marginTop: 24, flexWrap: "wrap" }}>
+          {streak >= 1 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 20, padding: "5px 12px" }}>
+              <span style={{ fontSize: 12 }}>🔥</span>
+              <span style={{ fontSize: 11, color: "#C9A84C", fontFamily: "sans-serif", fontWeight: 700 }}>{streak} day streak</span>
+            </div>
+          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: "5px 12px" }}>
+            <span style={{ fontSize: 11 }}>🍽️</span>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", fontFamily: "sans-serif" }}>{mealsToday}/3 meals today</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: "5px 12px" }}>
+            <span style={{ fontSize: 11 }}>❤️</span>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", fontFamily: "sans-serif" }}>{favouriteCount} saved</span>
+          </div>
+          {unlockedIds.length > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: "5px 12px" }}>
+              <span style={{ fontSize: 11 }}>🏆</span>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", fontFamily: "sans-serif" }}>{unlockedIds.length} achievement{unlockedIds.length !== 1 ? "s" : ""}</span>
+            </div>
+          )}
+          {hasTargets && todayEaten.calories > 0 && (
+            <Link href="/tracker" style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: "5px 12px", textDecoration: "none" }}>
+              <span style={{ fontSize: 11 }}>📊</span>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", fontFamily: "sans-serif" }}>{Math.round((todayEaten.calories / targets.calories) * 100)}% calories tracked</span>
+            </Link>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Achievement Toast ─────────────────────────────────────────────────────────
+function AchievementToast({ achievement, onDismiss }) {
+  if (!achievement) return null;
+  return (
+    <div style={{
+      position: "fixed", bottom: 28, right: 28, zIndex: 300,
+      background: "#1e2d4a", border: "1px solid rgba(201,168,76,0.6)",
+      borderRadius: 10, padding: "18px 22px", maxWidth: 300,
+      boxShadow: "0 12px 40px rgba(0,0,0,0.35)",
+      animation: "toastIn 0.35s cubic-bezier(0.34,1.56,0.64,1)",
+      cursor: "pointer",
+    }} onClick={onDismiss}>
+      <style>{`@keyframes toastIn { from { opacity:0; transform: translateY(24px) scale(0.95); } to { opacity:1; transform: translateY(0) scale(1); } }`}</style>
+      <div style={{ fontSize: 9, color: "#C9A84C", letterSpacing: 3, textTransform: "uppercase", fontFamily: "sans-serif", fontWeight: 700, marginBottom: 8 }}>🏆 Achievement Unlocked</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ fontSize: 28, lineHeight: 1 }}>{achievement.icon}</div>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: "Georgia, serif", marginBottom: 2 }}>{achievement.title}</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", fontFamily: "sans-serif", lineHeight: 1.5 }}>{achievement.desc}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Ingredient amount scaling ────────────────────────────────────────────────
 function scaleAmount(amount, factor) {
   if (factor === 1) return amount;
@@ -282,7 +496,7 @@ function RecipeCard({ recipe, flavor, imageUrl, isFavourite, onToggleFavourite, 
   const [expanded, setExpanded] = useState(false);
   const [servings, setServings] = useState(1);
   return (
-    <div style={{ background: "#fff", borderRadius: 8, overflow: "hidden", border: "1px solid #e8e4dc", boxShadow: "0 4px 24px rgba(0,0,0,0.06)", marginBottom: 20 }}>
+    <div className="recipe-card-hover" style={{ background: "#fff", borderRadius: 8, overflow: "hidden", border: "1px solid #e8e4dc", boxShadow: "0 4px 24px rgba(0,0,0,0.06)", marginBottom: 20 }}>
       <div style={{ position: "relative", height: compact ? 150 : 200, overflow: "hidden" }}>
         <img src={imageUrl} alt={recipe.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { e.target.src = getFallbackImage(flavor); }} />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top,rgba(0,0,0,0.55),transparent 60%)" }} />
@@ -891,12 +1105,46 @@ function GoalsTab({ user }) {
           {saving ? "Saving..." : "Save"}
         </button>
       </div>
+      {/* Achievements panel */}
+      <AchievementsPanel />
+
       <div style={{ background: "#fff", border: "1px solid #e8e4dc", borderRadius: 8, padding: "20px 24px" }}>
         <div style={{ fontSize: 11, color: "#C9A84C", letterSpacing: 3, textTransform: "uppercase", fontFamily: "sans-serif", fontWeight: 700, marginBottom: 12 }}>Quick Links</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <Link href="/profile" style={{ fontSize: 13, color: "#1e2d4a", fontFamily: "sans-serif", textDecoration: "none" }}>📊 Update Your Macros →</Link>
           <Link href="/planner" style={{ fontSize: 13, color: "#1e2d4a", fontFamily: "sans-serif", textDecoration: "none" }}>📅 Weekly Meal Planner →</Link>
+          <Link href="/tracker" style={{ fontSize: 13, color: "#1e2d4a", fontFamily: "sans-serif", textDecoration: "none" }}>📈 Daily Tracker →</Link>
+          <Link href="/progress" style={{ fontSize: 13, color: "#1e2d4a", fontFamily: "sans-serif", textDecoration: "none" }}>⚖️ Progress Log →</Link>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Achievements Panel (used in Goals tab) ────────────────────────────────────
+function AchievementsPanel() {
+  const [unlocked, setUnlocked] = useState([]);
+  useEffect(() => {
+    try { setUnlocked(JSON.parse(localStorage.getItem("achievements") || "[]")); } catch { /* ignore */ }
+  }, []);
+
+  return (
+    <div style={{ background: "#fff", border: "1px solid #e8e4dc", borderRadius: 8, padding: "24px", marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+        <div style={{ fontSize: 11, color: "#C9A84C", letterSpacing: 3, textTransform: "uppercase", fontFamily: "sans-serif", fontWeight: 700 }}>Your Achievements</div>
+        <div style={{ fontSize: 12, color: "#aaa", fontFamily: "sans-serif" }}>{unlocked.length} / {ACHIEVEMENTS.length} unlocked</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 10 }}>
+        {ACHIEVEMENTS.map(a => {
+          const earned = unlocked.includes(a.id);
+          return (
+            <div key={a.id} title={a.desc} style={{ background: earned ? "rgba(201,168,76,0.07)" : "#fafaf8", border: `1px solid ${earned ? "rgba(201,168,76,0.3)" : "#e8e4dc"}`, borderRadius: 8, padding: "12px 10px", textAlign: "center", opacity: earned ? 1 : 0.45, transition: "all 0.2s" }}>
+              <div style={{ fontSize: 22, marginBottom: 6, filter: earned ? "none" : "grayscale(1)" }}>{a.icon}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: earned ? "#1e2d4a" : "#aaa", fontFamily: "sans-serif", lineHeight: 1.3 }}>{a.title}</div>
+              <div style={{ fontSize: 9, color: "#bbb", fontFamily: "sans-serif", marginTop: 3, lineHeight: 1.4 }}>{a.desc}</div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -942,16 +1190,64 @@ export default function GeneratorPage() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [favourites, setFavourites] = useState([]);
+  const [todayEaten, setTodayEaten] = useState({ calories: 0, protein: 0, carbs: 0, fat: 0 });
+  const [plannerSlots, setPlannerSlots] = useState({});
+  const [unlockedIds, setUnlockedIds] = useState([]);
+  const [newAchievement, setNewAchievement] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
-    try { setFavourites(JSON.parse(localStorage.getItem("mealFavourites") || "[]")); } catch { /* ignore */ }
+    try {
+      const favs = JSON.parse(localStorage.getItem("mealFavourites") || "[]");
+      setFavourites(favs);
+
+      // Load planner slots
+      const slots = JSON.parse(localStorage.getItem("weeklyPlanner") || "{}").slots || {};
+      setPlannerSlots(slots);
+
+      // Compute today's eaten macros
+      const today = new Date().toISOString().slice(0, 10);
+      const plannerTotal = ["Breakfast","Lunch","Dinner"].reduce((acc, m) => {
+        const d = slots[`${today}_${m}`];
+        if (!d) return acc;
+        return { calories: acc.calories + (d.recipe.calories||0), protein: acc.protein + (d.recipe.protein||0), carbs: acc.carbs + (d.recipe.carbs||0), fat: acc.fat + (d.recipe.fat||0) };
+      }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
+      const extras = JSON.parse(localStorage.getItem(`extraLog_${today}`) || "[]");
+      const extrasTotal = extras.reduce((acc, e) => ({ calories: acc.calories + (e.calories||0), protein: acc.protein + (e.protein||0), carbs: acc.carbs + (e.carbs||0), fat: acc.fat + (e.fat||0) }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
+      setTodayEaten({ calories: plannerTotal.calories + extrasTotal.calories, protein: plannerTotal.protein + extrasTotal.protein, carbs: plannerTotal.carbs + extrasTotal.carbs, fat: plannerTotal.fat + extrasTotal.fat });
+    } catch { /* ignore */ }
+
     const supabase = createClient();
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       setUser(user);
       if (user) {
-        const { data } = await supabase.from("profiles").select("calories,protein,carbs,fat,goal,goals_text,wellness_notes,dietary_pref,allergens_list").eq("user_id", user.id).single();
-        if (data) setProfile(data);
+        const { data } = await supabase.from("profiles").select("name,calories,protein,carbs,fat,goal,goals_text,wellness_notes,dietary_pref,allergens_list").eq("user_id", user.id).single();
+        if (data) {
+          setProfile(data);
+          // Check for progress log entries (achievement)
+          const { data: progressData } = await supabase.from("progress_logs").select("id").eq("user_id", user.id).limit(1);
+          // Evaluate achievements after profile load
+          setTimeout(() => {
+            try {
+              const slots = JSON.parse(localStorage.getItem("weeklyPlanner") || "{}").slots || {};
+              const streak = calcStreak();
+              const conditions = checkAchievements(data, streak, slots);
+              if (progressData?.length) conditions.progress_start = true;
+              const earned = ACHIEVEMENTS.filter(a => conditions[a.id]).map(a => a.id);
+              const prev = JSON.parse(localStorage.getItem("achievements") || "[]");
+              const newOnes = earned.filter(id => !prev.includes(id));
+              if (newOnes.length) {
+                const updated = [...new Set([...prev, ...earned])];
+                localStorage.setItem("achievements", JSON.stringify(updated));
+                setUnlockedIds(updated);
+                const first = ACHIEVEMENTS.find(a => a.id === newOnes[0]);
+                if (first) { setNewAchievement(first); setTimeout(() => setNewAchievement(null), 5000); }
+              } else {
+                setUnlockedIds(earned);
+              }
+            } catch { /* ignore */ }
+          }, 500);
+        }
       }
     });
   }, []);
@@ -980,38 +1276,51 @@ export default function GeneratorPage() {
           nav { padding: 16px 20px !important; }
           .gen-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
           .gen-tabs::-webkit-scrollbar { display: none; }
+          .dash-rings { display: none !important; }
         }
         textarea { transition: border-color 0.2s; }
         textarea:focus { border-color: #1e2d4a !important; outline: none; }
         input[type="number"]::-webkit-inner-spin-button { opacity: 0.4; }
+        .tab-btn { transition: background 0.15s, color 0.15s; }
+        .tab-btn:hover { background: rgba(30,45,74,0.06) !important; }
+        .gen-btn-primary { transition: opacity 0.2s, transform 0.1s; }
+        .gen-btn-primary:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+        .gen-btn-primary:active:not(:disabled) { transform: translateY(0); }
+        .recipe-card-hover { transition: box-shadow 0.2s, transform 0.2s; }
+        .recipe-card-hover:hover { box-shadow: 0 12px 40px rgba(30,45,74,0.12) !important; transform: translateY(-2px); }
       `}</style>
 
       <Nav user={user} onSignOut={handleSignOut} />
 
-      {/* Page header */}
-      <div style={{ textAlign: "center", padding: "40px 24px 0" }}>
-        <div style={{ fontSize: 11, color: "#C9A84C", letterSpacing: 4, textTransform: "uppercase", marginBottom: 10, fontFamily: "sans-serif", fontWeight: 700 }}>AI-Powered</div>
-        <h1 style={{ fontSize: "clamp(26px,5vw,42px)", fontWeight: 400, color: "#1a1a1a", margin: 0, lineHeight: 1.15 }}>
-          Macro Meal <span style={{ color: "#C9A84C", fontStyle: "italic" }}>Generator</span>
-        </h1>
-        {/* Streak + quick links */}
-        {(() => { const streak = calcStreak(); return streak >= 2 ? (
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 14, background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 20, padding: "5px 14px" }}>
-            <span style={{ fontSize: 14 }}>🔥</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#9a7a28", fontFamily: "sans-serif" }}>{streak} day streak — keep it up!</span>
-          </div>
-        ) : null; })()}
-        <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 14 }}>
-          <Link href="/tracker" style={{ fontSize: 11, color: "#aaa", fontFamily: "sans-serif", textDecoration: "none", letterSpacing: 0.5 }}>📊 Daily Tracker</Link>
-          <Link href="/progress" style={{ fontSize: 11, color: "#aaa", fontFamily: "sans-serif", textDecoration: "none", letterSpacing: 0.5 }}>📈 Progress Log</Link>
-        </div>
-      </div>
+      {/* Personalised Dashboard */}
+      <DashboardPanel
+        profile={profile}
+        todayEaten={todayEaten}
+        streak={calcStreak()}
+        unlockedIds={unlockedIds}
+        plannerSlots={plannerSlots}
+        favouriteCount={favourites.length}
+      />
 
-      {/* Tabs */}
-      <div className="gen-tabs" style={{ display: "flex", justifyContent: "center", gap: 0, padding: "28px 24px 0" }}>
-        <div style={{ display: "flex", background: "#fff", border: "1px solid #e8e4dc", borderRadius: 6, overflow: "hidden" }}>
-          {TABS.map((tab, i) => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ padding: "11px 18px", background: activeTab === tab.id ? "#1e2d4a" : "#fff", color: activeTab === tab.id ? "#fff" : "#888", border: "none", borderRight: i < TABS.length - 1 ? "1px solid #e8e4dc" : "none", fontSize: 11, fontWeight: 700, cursor: "pointer", letterSpacing: 0.5, fontFamily: "sans-serif", whiteSpace: "nowrap", transition: "all 0.15s" }}>
+      {/* Tab bar */}
+      <div style={{ background: "#fff", borderBottom: "1px solid #e8e4dc", padding: "0 24px" }}>
+        <div className="gen-tabs" style={{ maxWidth: 1000, margin: "0 auto", display: "flex", gap: 0, overflowX: "auto" }}>
+          {TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className="tab-btn"
+              style={{
+                padding: "16px 20px",
+                background: "transparent",
+                color: activeTab === tab.id ? "#1e2d4a" : "#aaa",
+                border: "none",
+                borderBottom: `2px solid ${activeTab === tab.id ? "#1e2d4a" : "transparent"}`,
+                fontSize: 11, fontWeight: 700, cursor: "pointer",
+                letterSpacing: 0.8, fontFamily: "sans-serif",
+                whiteSpace: "nowrap",
+              }}
+            >
               {tab.label}
             </button>
           ))}
@@ -1043,6 +1352,8 @@ export default function GeneratorPage() {
         </Link>
         <div style={{ fontSize: 12, color: "#bbb", fontFamily: "sans-serif" }}>© 2026 HerCoachJess. All rights reserved.</div>
       </footer>
+
+      <AchievementToast achievement={newAchievement} onDismiss={() => setNewAchievement(null)} />
     </div>
   );
 }
