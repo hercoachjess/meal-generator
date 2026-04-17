@@ -742,59 +742,76 @@ function GenerateTab({ profile, favourites, setFavourites, genOptions }) {
   );
 }
 
-// ── Split Editor ─────────────────────────────────────────────────────────────
-function SplitEditor({ splits, setSplits }) {
-  const total = splits.Breakfast + splits.Lunch + splits.Dinner;
-  const valid = total === 100;
+// ── Day Plan helpers ──────────────────────────────────────────────────────────
+const EXTRA_MEAL_PRESETS = ["Morning Snack", "Afternoon Snack", "Pre-Workout", "Post-Workout", "Evening Snack", "Supper"];
 
-  function handleChange(slot, val) {
-    const n = Math.max(5, Math.min(90, parseInt(val) || 0));
-    setSplits(prev => ({ ...prev, [slot]: n }));
-  }
+function defaultIngredientForMeal(name) {
+  const map = {
+    "Breakfast": "oats or eggs",
+    "Lunch": "chicken or tuna",
+    "Dinner": "salmon or beef",
+    "Morning Snack": "Greek yogurt or fruit",
+    "Afternoon Snack": "nuts or rice cakes",
+    "Pre-Workout": "banana or oats",
+    "Post-Workout": "chicken or protein powder",
+    "Evening Snack": "cottage cheese or dark chocolate",
+    "Supper": "turkey or lentils",
+  };
+  return map[name] || "chicken or vegetables";
+}
 
-  return (
-    <div style={{ marginBottom: 20 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <div style={{ fontSize: 11, color: "#888", letterSpacing: 1.5, textTransform: "uppercase", fontFamily: "sans-serif", fontWeight: 700 }}>Meal Splits</div>
-        <div style={{ fontSize: 11, fontFamily: "sans-serif", color: valid ? SHOP_COLOR : "#c0392b", fontWeight: 700 }}>
-          {total}% {valid ? "✓" : `— needs to equal 100%`}
-        </div>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
-        {MEAL_SLOTS.map(slot => (
-          <div key={slot}>
-            <div style={{ fontSize: 10, color: "#aaa", textTransform: "uppercase", letterSpacing: 1, fontFamily: "sans-serif", marginBottom: 5, textAlign: "center" }}>{slot}</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <input
-                type="number"
-                min={5}
-                max={90}
-                value={splits[slot]}
-                onChange={e => handleChange(slot, e.target.value)}
-                style={{ width: "100%", background: "#fff", border: `1px solid ${valid ? "#e8e4dc" : "rgba(192,57,43,0.35)"}`, borderRadius: 4, padding: "8px 6px", textAlign: "center", fontSize: 15, fontWeight: 700, color: "#1e2d4a", fontFamily: "Georgia, serif", outline: "none" }}
-              />
-              <span style={{ fontSize: 12, color: "#aaa", fontFamily: "sans-serif" }}>%</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+function autoBalanceMeals(meals) {
+  const equal = Math.floor(100 / meals.length);
+  const rem = 100 - equal * meals.length;
+  return meals.map((m, i) => ({ ...m, pct: equal + (i === 0 ? rem : 0) }));
 }
 
 // ── Tab: Day Plan ────────────────────────────────────────────────────────────
 function DayPlanTab({ profile, favourites, setFavourites, genOptions }) {
-  const [loading, setLoading] = useState(false);
-  const [dayMeals, setDayMeals] = useState({ Breakfast: null, Lunch: null, Dinner: null });
-  const [imageUrls, setImageUrls] = useState({});
-  const [error, setError] = useState(null);
-  const [saved, setSaved] = useState(false);
-  const [splits, setSplits] = useState({ Breakfast: 25, Lunch: 35, Dinner: 40 });
+  const [meals, setMeals] = useState([
+    { id: 1, name: "Breakfast", pct: 25 },
+    { id: 2, name: "Lunch",     pct: 35 },
+    { id: 3, name: "Dinner",    pct: 40 },
+  ]);
+  const [dayCalories, setDayCalories] = useState(profile?.calories || 1800);
+  const [dayProtein,  setDayProtein]  = useState(profile?.protein  || 120);
+  const [results,     setResults]     = useState({});   // { [meal.id]: recipe }
+  const [imageUrls,   setImageUrls]   = useState({});   // { [meal.id]: url }
+  const [loadingIds,  setLoadingIds]  = useState(new Set());
+  const [error,       setError]       = useState(null);
+  const [saved,       setSaved]       = useState(false);
+  const [showAdd,     setShowAdd]     = useState(false);
+  const [customName,  setCustomName]  = useState("");
 
-  const totalCal = profile?.calories || 1800;
-  const totalPro = profile?.protein || 120;
-  const splitsValid = splits.Breakfast + splits.Lunch + splits.Dinner === 100;
+  // Sync targets when profile loads/changes
+  useEffect(() => {
+    if (profile?.calories) setDayCalories(profile.calories);
+    if (profile?.protein)  setDayProtein(profile.protein);
+  }, [profile?.calories, profile?.protein]);
 
+  const totalPct   = meals.reduce((s, m) => s + m.pct, 0);
+  const splitsValid = totalPct === 100;
+  const anyLoading  = loadingIds.size > 0;
+  const hasResults  = Object.keys(results).length > 0;
+
+  // Meal list mutations
+  function updatePct(id, val) {
+    const n = Math.max(5, Math.min(90, parseInt(val) || 0));
+    setMeals(prev => prev.map(m => m.id === id ? { ...m, pct: n } : m));
+  }
+  function removeMeal(id) {
+    const next = autoBalanceMeals(meals.filter(m => m.id !== id));
+    setMeals(next);
+    setResults(prev => { const c = { ...prev }; delete c[id]; return c; });
+    setImageUrls(prev => { const c = { ...prev }; delete c[id]; return c; });
+  }
+  function addMeal(name) {
+    setMeals(prev => autoBalanceMeals([...prev, { id: Date.now(), name, pct: 0 }]));
+    setShowAdd(false);
+    setCustomName("");
+  }
+
+  // Favourites helpers
   function isFavourite(recipe) { return favourites.some(f => f.recipe.name === recipe.name); }
   function toggleFavourite(recipe, imageUrl) {
     setFavourites(prev => {
@@ -805,59 +822,163 @@ function DayPlanTab({ profile, favourites, setFavourites, genOptions }) {
     });
   }
 
-  async function generateDayPlan() {
-    if (!splitsValid) return;
-    setError(null); setLoading(true); setDayMeals({ Breakfast: null, Lunch: null, Dinner: null }); setImageUrls({});
+  // Generate a single meal slot
+  async function generateOne(meal) {
+    setLoadingIds(prev => new Set([...prev, meal.id]));
+    setError(null);
     try {
-      const ingredients = { Breakfast: "oats or eggs", Lunch: "chicken or tuna", Dinner: "salmon or beef" };
-      const avoidMeals = getAvoidList();
-      const results = await Promise.all(MEAL_SLOTS.map(async m => {
-        const cal = Math.round(totalCal * (splits[m] / 100));
-        const pro = Math.round(totalPro * (splits[m] / 100));
-        const recipe = await callClaudeAPI(cal, pro, ingredients[m], m === "Breakfast" ? "High Protein" : "Mediterranean", {
+      const cal  = Math.round(dayCalories * (meal.pct / 100));
+      const pro  = Math.round(dayProtein  * (meal.pct / 100));
+      const recipe = await callClaudeAPI(
+        cal, pro,
+        defaultIngredientForMeal(meal.name),
+        meal.name === "Breakfast" ? "High Protein" : "Balanced",
+        {
           dietaryPrefs: genOptions?.dietaryPrefs,
-          allergens: genOptions?.allergens,
-          avoidMeals,
-        });
-        trackRecentMeal(recipe.name);
-        const imageUrl = await fetchGoogleImage(recipe.name, "High Protein");
-        return { meal: m, recipe, imageUrl };
-      }));
-      const newMeals = {}; const newImages = {};
-      results.forEach(({ meal, recipe, imageUrl }) => { newMeals[meal] = recipe; newImages[meal] = imageUrl; });
-      setDayMeals(newMeals); setImageUrls(newImages);
-    } catch { setError("Generation failed. Please try again."); }
-    finally { setLoading(false); }
+          allergens:    genOptions?.allergens,
+          avoidMeals:   getAvoidList(),
+          mealFilters:  { mealType: meal.name },
+        }
+      );
+      trackRecentMeal(recipe.name);
+      const imageUrl = await fetchGoogleImage(recipe.name, "High Protein");
+      setResults(prev => ({ ...prev, [meal.id]: recipe }));
+      setImageUrls(prev => ({ ...prev, [meal.id]: imageUrl }));
+    } catch {
+      setError(`Failed to generate ${meal.name}. Please try again.`);
+    } finally {
+      setLoadingIds(prev => { const s = new Set(prev); s.delete(meal.id); return s; });
+    }
+  }
+
+  // Generate all meals sequentially
+  async function generateAll() {
+    if (!splitsValid) return;
+    setError(null);
+    setResults({});
+    setImageUrls({});
+    for (const meal of meals) {
+      await generateOne(meal);
+    }
   }
 
   function saveDayToPlanner() {
-    const today = new Date().toISOString().slice(0, 10);
-    const existing = JSON.parse(localStorage.getItem("weeklyPlanner") || "{}");
-    const slots = existing.slots || {};
-    Object.entries(dayMeals).forEach(([mealType, recipe]) => {
-      if (recipe) slots[`${today}_${mealType}`] = { recipe, flavor: "High Protein", imageUrl: imageUrls[mealType] || "" };
+    const today   = new Date().toISOString().slice(0, 10);
+    const stored  = JSON.parse(localStorage.getItem("weeklyPlanner") || "{}");
+    const slots   = stored.slots || {};
+    meals.forEach(meal => {
+      if (results[meal.id]) slots[`${today}_${meal.name}`] = { recipe: results[meal.id], flavor: "High Protein", imageUrl: imageUrls[meal.id] || "" };
     });
-    localStorage.setItem("weeklyPlanner", JSON.stringify({ ...existing, slots }));
+    localStorage.setItem("weeklyPlanner", JSON.stringify({ ...stored, slots }));
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   }
 
-  const hasResults = Object.values(dayMeals).some(Boolean);
+  const usedNames      = meals.map(m => m.name);
+  const availablePresets = EXTRA_MEAL_PRESETS.filter(p => !usedNames.includes(p));
+  const allResultsMeals  = {};
+  meals.forEach(m => { if (results[m.id]) allResultsMeals[m.name] = results[m.id]; });
 
   return (
     <div>
-      <div style={{ background: "#fff", border: "1px solid #e8e4dc", borderRadius: 8, padding: "24px 24px", marginBottom: 20 }}>
-        <SplitEditor splits={splits} setSplits={setSplits} />
+      <div style={{ background: "#fff", border: "1px solid #e8e4dc", borderRadius: 8, padding: "24px", marginBottom: 20 }}>
 
-        {/* Split preview */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 20 }}>
-          {MEAL_SLOTS.map(m => (
-            <div key={m} style={{ textAlign: "center", background: "#fafaf8", border: "1px solid #e8e4dc", borderRadius: 6, padding: "12px 8px" }}>
-              <div style={{ fontSize: 10, color: "#aaa", textTransform: "uppercase", letterSpacing: 1, fontFamily: "sans-serif", marginBottom: 4 }}>{m}</div>
-              <div style={{ fontSize: 17, fontWeight: 700, color: "#1e2d4a", fontFamily: "Georgia, serif" }}>{Math.round(totalCal * (splits[m] / 100))}</div>
-              <div style={{ fontSize: 10, color: "#C9A84C", fontFamily: "sans-serif" }}>kcal · {Math.round(totalPro * (splits[m] / 100))}g P</div>
+        {/* ── Daily Targets ── */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: "#888", letterSpacing: 1.5, textTransform: "uppercase", fontFamily: "sans-serif", fontWeight: 700 }}>Daily Targets</div>
+            {profile?.calories && (
+              <button onClick={() => { setDayCalories(profile.calories); setDayProtein(profile.protein); }}
+                style={{ background: "none", border: "none", fontSize: 11, color: "#C9A84C", cursor: "pointer", fontFamily: "sans-serif", padding: 0, textDecoration: "underline" }}>
+                Reset to profile
+              </button>
+            )}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {[
+              { label: "Calories (kcal)", value: dayCalories, min: 800,  max: 5000, set: v => setDayCalories(parseInt(v) || 1800) },
+              { label: "Protein (g)",     value: dayProtein,  min: 20,   max: 500,  set: v => setDayProtein(parseInt(v)  || 120)  },
+            ].map(({ label, value, min, max, set }) => (
+              <div key={label}>
+                <label style={{ display: "block", fontSize: 10, color: "#aaa", textTransform: "uppercase", letterSpacing: 1, fontFamily: "sans-serif", marginBottom: 5 }}>{label}</label>
+                <input type="number" min={min} max={max} value={value} onChange={e => set(e.target.value)}
+                  style={{ width: "100%", background: "#fafaf8", border: "1px solid #e8e4dc", borderRadius: 4, padding: "10px 12px", fontSize: 16, fontWeight: 700, color: "#1e2d4a", fontFamily: "Georgia, serif", outline: "none", boxSizing: "border-box" }} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Meal Splits ── */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: "#888", letterSpacing: 1.5, textTransform: "uppercase", fontFamily: "sans-serif", fontWeight: 700 }}>Meal Splits</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 11, fontFamily: "sans-serif", color: splitsValid ? SHOP_COLOR : "#c0392b", fontWeight: 700 }}>
+                {totalPct}% {splitsValid ? "✓" : "(must = 100%)"}
+              </span>
+              <button onClick={() => setMeals(autoBalanceMeals(meals))}
+                style={{ background: "rgba(30,45,74,0.06)", border: "1px solid rgba(30,45,74,0.18)", borderRadius: 4, padding: "4px 10px", fontSize: 10, color: "#1e2d4a", cursor: "pointer", fontFamily: "sans-serif", fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase" }}>
+                Auto-Balance
+              </button>
             </div>
-          ))}
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {meals.map(meal => (
+              <div key={meal.id} style={{ display: "grid", gridTemplateColumns: "1fr 76px 30px", gap: 8, alignItems: "center" }}>
+                {/* Meal label + macro preview */}
+                <div style={{ background: "#fafaf8", border: "1px solid #e8e4dc", borderRadius: 6, padding: "10px 14px" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#1e2d4a", fontFamily: "sans-serif" }}>{meal.name}</div>
+                  <div style={{ fontSize: 10, color: "#C9A84C", fontFamily: "sans-serif", marginTop: 2 }}>
+                    {Math.round(dayCalories * (meal.pct / 100))} kcal · {Math.round(dayProtein * (meal.pct / 100))}g P
+                  </div>
+                </div>
+                {/* % input */}
+                <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                  <input type="number" min={5} max={90} value={meal.pct} onChange={e => updatePct(meal.id, e.target.value)}
+                    style={{ width: "100%", background: "#fff", border: `1px solid ${splitsValid ? "#e8e4dc" : "rgba(192,57,43,0.35)"}`, borderRadius: 4, padding: "8px 4px", textAlign: "center", fontSize: 15, fontWeight: 700, color: "#1e2d4a", fontFamily: "Georgia, serif", outline: "none" }} />
+                  <span style={{ fontSize: 11, color: "#aaa", fontFamily: "sans-serif" }}>%</span>
+                </div>
+                {/* Remove */}
+                {meals.length > 1
+                  ? <button onClick={() => removeMeal(meal.id)} title="Remove meal"
+                      style={{ background: "none", border: "1px solid #e8e4dc", borderRadius: 4, color: "#bbb", fontSize: 16, cursor: "pointer", padding: "3px 7px", lineHeight: 1 }}>×</button>
+                  : <div />
+                }
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Add Extra Meal ── */}
+        <div style={{ marginBottom: 22 }}>
+          {showAdd ? (
+            <div style={{ background: "#fafaf8", border: "1px solid #e8e4dc", borderRadius: 6, padding: 14 }}>
+              <div style={{ fontSize: 10, color: "#aaa", textTransform: "uppercase", letterSpacing: 1, fontFamily: "sans-serif", marginBottom: 10 }}>Choose or name a meal</div>
+              {availablePresets.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+                  {availablePresets.map(p => (
+                    <button key={p} onClick={() => addMeal(p)}
+                      style={{ background: "rgba(30,45,74,0.05)", border: "1px solid rgba(30,45,74,0.18)", borderRadius: 20, padding: "5px 12px", fontSize: 11, color: "#1e2d4a", cursor: "pointer", fontFamily: "sans-serif" }}>{p}</button>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: "flex", gap: 8 }}>
+                <input value={customName} onChange={e => setCustomName(e.target.value)} placeholder="Custom meal name..."
+                  onKeyDown={e => { if (e.key === "Enter" && customName.trim()) addMeal(customName.trim()); }}
+                  style={{ flex: 1, background: "#fff", border: "1px solid #e8e4dc", borderRadius: 4, padding: "8px 12px", fontSize: 13, color: "#1e2d4a", fontFamily: "sans-serif", outline: "none" }} />
+                <button onClick={() => customName.trim() && addMeal(customName.trim())}
+                  style={{ background: "#1e2d4a", border: "none", borderRadius: 4, padding: "8px 16px", color: "#fff", fontSize: 12, cursor: "pointer", fontFamily: "sans-serif", fontWeight: 700 }}>Add</button>
+                <button onClick={() => setShowAdd(false)}
+                  style={{ background: "none", border: "1px solid #e8e4dc", borderRadius: 4, padding: "8px 12px", color: "#aaa", fontSize: 12, cursor: "pointer", fontFamily: "sans-serif" }}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={() => setShowAdd(true)}
+              style={{ width: "100%", background: "none", border: "1px dashed #C9A84C", borderRadius: 6, padding: "10px", color: "#C9A84C", fontSize: 12, cursor: "pointer", fontFamily: "sans-serif", fontWeight: 700, letterSpacing: 1 }}>
+              + Add Extra Meal
+            </button>
+          )}
         </div>
 
         {!profile?.calories && (
@@ -865,33 +986,53 @@ function DayPlanTab({ profile, favourites, setFavourites, genOptions }) {
             Using default targets. <Link href="/profile" style={{ color: "#1e2d4a" }}>Set your macros</Link> for personalised results.
           </p>
         )}
-        <button onClick={generateDayPlan} disabled={loading || !splitsValid} style={{ width: "100%", padding: "14px", border: "none", borderRadius: 4, background: loading || !splitsValid ? "#ccc" : "#1e2d4a", color: "#fff", fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", fontFamily: "sans-serif", cursor: loading || !splitsValid ? "not-allowed" : "pointer" }}>
-          {loading ? "Generating your day..." : "✦ Generate My Day Plan"}
+
+        <button onClick={generateAll} disabled={anyLoading || !splitsValid}
+          style={{ width: "100%", padding: "14px", border: "none", borderRadius: 4, background: anyLoading || !splitsValid ? "#ccc" : "#1e2d4a", color: "#fff", fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", fontFamily: "sans-serif", cursor: anyLoading || !splitsValid ? "not-allowed" : "pointer" }}>
+          {anyLoading ? "Generating meals..." : "✦ Generate My Day Plan"}
         </button>
       </div>
 
-      {loading && (
-        <div style={{ textAlign: "center", padding: 28, color: "#C9A84C", fontSize: 14, fontFamily: "sans-serif" }}>
-          ✦ Creating breakfast, lunch &amp; dinner for you...
-        </div>
+      {error && (
+        <div style={{ background: "rgba(220,53,53,0.06)", border: "1px solid rgba(220,53,53,0.2)", borderRadius: 4, padding: 12, marginBottom: 14, color: "#c0392b", fontSize: 13, fontFamily: "sans-serif" }}>⚠ {error}</div>
       )}
-      {error && <div style={{ background: "rgba(220,53,53,0.06)", border: "1px solid rgba(220,53,53,0.2)", borderRadius: 4, padding: 12, marginBottom: 14, color: "#c0392b", fontSize: 13, fontFamily: "sans-serif" }}>⚠ {error}</div>}
 
-      {hasResults && !loading && (
-        <>
-          {MEAL_SLOTS.map(m => dayMeals[m] && (
-            <div key={m}>
-              <div style={{ fontSize: 11, color: "#C9A84C", letterSpacing: 3, textTransform: "uppercase", fontFamily: "sans-serif", fontWeight: 700, marginBottom: 8, marginTop: 4 }}>{m}</div>
-              <RecipeCard recipe={dayMeals[m]} flavor="High Protein" imageUrl={imageUrls[m] || ""} isFavourite={isFavourite(dayMeals[m])} onToggleFavourite={(r, url) => toggleFavourite(r, url)} compact />
+      {/* ── Per-meal results (show each as it arrives) ── */}
+      {meals.map(meal => (
+        (results[meal.id] || loadingIds.has(meal.id)) ? (
+          <div key={meal.id}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, marginTop: 4 }}>
+              <div style={{ fontSize: 11, color: "#C9A84C", letterSpacing: 3, textTransform: "uppercase", fontFamily: "sans-serif", fontWeight: 700 }}>{meal.name}</div>
+              {results[meal.id] && !loadingIds.has(meal.id) && (
+                <button onClick={() => generateOne(meal)}
+                  style={{ background: "none", border: "1px solid rgba(30,45,74,0.2)", borderRadius: 4, padding: "4px 10px", fontSize: 10, color: "#1e2d4a", cursor: "pointer", fontFamily: "sans-serif", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  ↺ Regenerate
+                </button>
+              )}
             </div>
-          ))}
+            {loadingIds.has(meal.id)
+              ? <div style={{ textAlign: "center", padding: "16px 0", color: "#C9A84C", fontSize: 13, fontFamily: "sans-serif" }}>✦ Creating {meal.name}...</div>
+              : results[meal.id] && (
+                <RecipeCard
+                  recipe={results[meal.id]}
+                  flavor="High Protein"
+                  imageUrl={imageUrls[meal.id] || ""}
+                  isFavourite={isFavourite(results[meal.id])}
+                  onToggleFavourite={(r, url) => toggleFavourite(r, url)}
+                  compact
+                />
+              )
+            }
+          </div>
+        ) : null
+      ))}
 
-          {/* Shopping list */}
+      {hasResults && !anyLoading && (
+        <>
           <ShoppingListAccordion
-            mealsObj={dayMeals}
+            mealsObj={allResultsMeals}
             label={`Day Plan — ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long" })}`}
           />
-
           <div style={{ textAlign: "center", marginTop: 16, marginBottom: 24 }}>
             {saved
               ? <div style={{ padding: "12px 24px", background: "rgba(201,168,76,0.1)", border: "1px solid rgba(201,168,76,0.35)", borderRadius: 4, color: "#9a7a28", fontSize: 13, fontFamily: "sans-serif", display: "inline-block" }}>✓ Saved to today&apos;s planner!</div>
@@ -909,49 +1050,77 @@ function DayPlanTab({ profile, favourites, setFavourites, genOptions }) {
 // ── Tab: Day Planner ─────────────────────────────────────────────────────────
 function DayPlannerTab({ favourites }) {
   const today = new Date().toISOString().slice(0, 10);
-  const [slots, setSlots] = useState({ Breakfast: null, Lunch: null, Dinner: null });
-  const [saved, setSaved] = useState(false);
-  const [favList, setFavList] = useState([]);
+  // Dynamic list of named slots: [{ id, name, data }]
+  const [slots, setSlots] = useState([
+    { id: "Breakfast", name: "Breakfast", data: null },
+    { id: "Lunch",     name: "Lunch",     data: null },
+    { id: "Dinner",    name: "Dinner",    data: null },
+  ]);
+  const [saved,       setSaved]       = useState(false);
+  const [favList,     setFavList]     = useState([]);
+  const [showAdd,     setShowAdd]     = useState(false);
+  const [customName,  setCustomName]  = useState("");
 
   useEffect(() => {
     try { setFavList(JSON.parse(localStorage.getItem("mealFavourites") || "[]")); } catch { /* ignore */ }
     const stored = JSON.parse(localStorage.getItem("weeklyPlanner") || "{}");
     const s = stored.slots || {};
-    setSlots({
-      Breakfast: s[`${today}_Breakfast`] || null,
-      Lunch: s[`${today}_Lunch`] || null,
-      Dinner: s[`${today}_Dinner`] || null,
+    // Load any saved slots for today (including extras)
+    const todayKeys = Object.keys(s).filter(k => k.startsWith(`${today}_`));
+    const loaded = todayKeys.map(k => {
+      const name = k.replace(`${today}_`, "");
+      return { id: name, name, data: s[k] };
     });
+    if (loaded.length) {
+      // Merge: keep B/L/D order first, then any extras
+      const base = ["Breakfast", "Lunch", "Dinner"];
+      const merged = base.map(n => loaded.find(l => l.name === n) || { id: n, name: n, data: null });
+      const extras = loaded.filter(l => !base.includes(l.name));
+      setSlots([...merged, ...extras]);
+    }
   }, [today]);
 
-  function addFavToSlot(meal, fav) {
-    setSlots(prev => ({ ...prev, [meal]: { recipe: fav.recipe, flavor: fav.flavor, imageUrl: fav.imageUrl } }));
+  function setSlotData(id, data) {
+    setSlots(prev => prev.map(s => s.id === id ? { ...s, data } : s));
   }
-  function clearSlot(meal) { setSlots(prev => ({ ...prev, [meal]: null })); }
+  function clearSlot(id) { setSlotData(id, null); }
+  function removeSlot(id) { setSlots(prev => prev.filter(s => s.id !== id)); }
+
+  function addSlot(name) {
+    const id = name + "_" + Date.now();
+    setSlots(prev => [...prev, { id, name, data: null }]);
+    setShowAdd(false);
+    setCustomName("");
+  }
 
   function savePlan() {
-    const stored = JSON.parse(localStorage.getItem("weeklyPlanner") || "{}");
+    const stored   = JSON.parse(localStorage.getItem("weeklyPlanner") || "{}");
     const existing = stored.slots || {};
-    Object.entries(slots).forEach(([mealType, data]) => {
-      if (data) existing[`${today}_${mealType}`] = data;
-      else delete existing[`${today}_${mealType}`];
+    // Clear old today slots
+    Object.keys(existing).filter(k => k.startsWith(`${today}_`)).forEach(k => delete existing[k]);
+    // Write current slots
+    slots.forEach(({ name, data }) => {
+      if (data) existing[`${today}_${name}`] = data;
     });
     localStorage.setItem("weeklyPlanner", JSON.stringify({ ...stored, slots: existing }));
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   }
 
-  const totalCal = Object.values(slots).filter(Boolean).reduce((s, d) => s + (d.recipe.calories || 0), 0);
-  const totalPro = Object.values(slots).filter(Boolean).reduce((s, d) => s + (d.recipe.protein || 0), 0);
+  const totalCal = slots.filter(s => s.data).reduce((acc, s) => acc + (s.data.recipe?.calories || 0), 0);
+  const totalPro = slots.filter(s => s.data).reduce((acc, s) => acc + (s.data.recipe?.protein  || 0), 0);
 
-  // Build mealsObj for shopping list
-  const mealsObj = {};
-  Object.entries(slots).forEach(([slot, data]) => { mealsObj[slot] = data?.recipe || null; });
-  const hasMeals = Object.values(slots).some(Boolean);
+  const mealsObj   = {};
+  slots.forEach(s => { if (s.data?.recipe) mealsObj[s.name] = s.data.recipe; });
+  const hasMeals   = slots.some(s => s.data);
+
+  const usedNames       = slots.map(s => s.name);
+  const availablePresets = EXTRA_MEAL_PRESETS.filter(p => !usedNames.includes(p));
 
   return (
     <div>
       <div style={{ background: "#fff", border: "1px solid #e8e4dc", borderRadius: 8, padding: "24px", marginBottom: 20 }}>
+        {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <div>
             <div style={{ fontSize: 11, color: "#C9A84C", letterSpacing: 3, textTransform: "uppercase", fontFamily: "sans-serif", fontWeight: 700 }}>Today</div>
@@ -967,21 +1136,28 @@ function DayPlannerTab({ favourites }) {
           )}
         </div>
 
-        {MEAL_SLOTS.map(meal => (
-          <div key={meal} style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#aaa", textTransform: "uppercase", letterSpacing: 1.5, fontFamily: "sans-serif", marginBottom: 7 }}>{meal}</div>
-            {slots[meal] ? (
+        {/* Slots */}
+        {slots.map(slot => (
+          <div key={slot.id} style={{ marginBottom: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 7 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#aaa", textTransform: "uppercase", letterSpacing: 1.5, fontFamily: "sans-serif" }}>{slot.name}</div>
+              {!["Breakfast","Lunch","Dinner"].includes(slot.name) && (
+                <button onClick={() => removeSlot(slot.id)} style={{ background: "none", border: "none", color: "#ccc", fontSize: 12, cursor: "pointer", fontFamily: "sans-serif", padding: 0 }}>Remove</button>
+              )}
+            </div>
+            {slot.data ? (
               <div style={{ display: "flex", alignItems: "center", gap: 12, background: "#fafaf8", border: "1px solid #e8e4dc", borderRadius: 6, padding: "10px 14px" }}>
-                <img src={slots[meal].imageUrl || getFallbackImage(slots[meal].flavor)} alt="" style={{ width: 44, height: 44, borderRadius: 5, objectFit: "cover", flexShrink: 0 }} onError={e => { e.target.src = getFallbackImage(slots[meal].flavor); }} />
+                <img src={slot.data.imageUrl || getFallbackImage(slot.data.flavor)} alt="" style={{ width: 44, height: 44, borderRadius: 5, objectFit: "cover", flexShrink: 0 }} onError={e => { e.target.src = getFallbackImage(slot.data.flavor); }} />
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#1e2d4a", fontFamily: "sans-serif" }}>{slots[meal].recipe.name}</div>
-                  <div style={{ fontSize: 11, color: "#aaa", fontFamily: "sans-serif", marginTop: 2 }}>{slots[meal].recipe.calories} cal · {slots[meal].recipe.protein}g P</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#1e2d4a", fontFamily: "sans-serif" }}>{slot.data.recipe.name}</div>
+                  <div style={{ fontSize: 11, color: "#aaa", fontFamily: "sans-serif", marginTop: 2 }}>{slot.data.recipe.calories} cal · {slot.data.recipe.protein}g P</div>
                 </div>
-                <button onClick={() => clearSlot(meal)} style={{ background: "none", border: "none", color: "#ccc", fontSize: 18, cursor: "pointer", padding: 0 }}>×</button>
+                <button onClick={() => clearSlot(slot.id)} style={{ background: "none", border: "none", color: "#ccc", fontSize: 18, cursor: "pointer", padding: 0 }}>×</button>
               </div>
             ) : (
               <div style={{ background: "#fafaf8", border: "1px dashed #d8d4cc", borderRadius: 6, padding: "10px 14px" }}>
-                <select onChange={e => { const fav = favList[parseInt(e.target.value)]; if (fav) addFavToSlot(meal, fav); e.target.value = ""; }} style={{ width: "100%", background: "transparent", border: "none", color: "#aaa", fontSize: 13, fontFamily: "sans-serif", outline: "none", cursor: "pointer" }}>
+                <select onChange={e => { const fav = favList[parseInt(e.target.value)]; if (fav) setSlotData(slot.id, { recipe: fav.recipe, flavor: fav.flavor, imageUrl: fav.imageUrl }); e.target.value = ""; }}
+                  style={{ width: "100%", background: "transparent", border: "none", color: "#aaa", fontSize: 13, fontFamily: "sans-serif", outline: "none", cursor: "pointer" }}>
                   <option value="">+ Add from saved favourites...</option>
                   {favList.map((fav, i) => <option key={i} value={i}>{fav.recipe.name}</option>)}
                 </select>
@@ -990,13 +1166,43 @@ function DayPlannerTab({ favourites }) {
           </div>
         ))}
 
-        <button onClick={savePlan} style={{ width: "100%", marginTop: 8, padding: "13px", border: "none", borderRadius: 4, background: "#1e2d4a", color: "#fff", fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", fontFamily: "sans-serif", cursor: "pointer" }}>
+        {/* Add extra slot */}
+        <div style={{ marginBottom: 16 }}>
+          {showAdd ? (
+            <div style={{ background: "#fafaf8", border: "1px solid #e8e4dc", borderRadius: 6, padding: 14 }}>
+              <div style={{ fontSize: 10, color: "#aaa", textTransform: "uppercase", letterSpacing: 1, fontFamily: "sans-serif", marginBottom: 10 }}>Add a meal slot</div>
+              {availablePresets.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 10 }}>
+                  {availablePresets.map(p => (
+                    <button key={p} onClick={() => addSlot(p)}
+                      style={{ background: "rgba(30,45,74,0.05)", border: "1px solid rgba(30,45,74,0.18)", borderRadius: 20, padding: "5px 12px", fontSize: 11, color: "#1e2d4a", cursor: "pointer", fontFamily: "sans-serif" }}>{p}</button>
+                  ))}
+                </div>
+              )}
+              <div style={{ display: "flex", gap: 8 }}>
+                <input value={customName} onChange={e => setCustomName(e.target.value)} placeholder="Custom meal name..."
+                  onKeyDown={e => { if (e.key === "Enter" && customName.trim()) addSlot(customName.trim()); }}
+                  style={{ flex: 1, background: "#fff", border: "1px solid #e8e4dc", borderRadius: 4, padding: "8px 12px", fontSize: 13, color: "#1e2d4a", fontFamily: "sans-serif", outline: "none" }} />
+                <button onClick={() => customName.trim() && addSlot(customName.trim())}
+                  style={{ background: "#1e2d4a", border: "none", borderRadius: 4, padding: "8px 16px", color: "#fff", fontSize: 12, cursor: "pointer", fontFamily: "sans-serif", fontWeight: 700 }}>Add</button>
+                <button onClick={() => setShowAdd(false)}
+                  style={{ background: "none", border: "1px solid #e8e4dc", borderRadius: 4, padding: "8px 12px", color: "#aaa", fontSize: 12, cursor: "pointer", fontFamily: "sans-serif" }}>Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={() => setShowAdd(true)}
+              style={{ width: "100%", background: "none", border: "1px dashed #C9A84C", borderRadius: 6, padding: "9px", color: "#C9A84C", fontSize: 12, cursor: "pointer", fontFamily: "sans-serif", fontWeight: 700, letterSpacing: 1 }}>
+              + Add Extra Meal
+            </button>
+          )}
+        </div>
+
+        <button onClick={savePlan} style={{ width: "100%", marginTop: 4, padding: "13px", border: "none", borderRadius: 4, background: "#1e2d4a", color: "#fff", fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", fontFamily: "sans-serif", cursor: "pointer" }}>
           Save to Weekly Planner
         </button>
         {saved && <div style={{ textAlign: "center", marginTop: 10, fontSize: 13, color: "#9a7a28", fontFamily: "sans-serif" }}>✓ Saved!</div>}
       </div>
 
-      {/* Shopping list from today's meals */}
       {hasMeals && (
         <ShoppingListAccordion
           mealsObj={mealsObj}
