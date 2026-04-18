@@ -398,6 +398,11 @@ export default function ProfilePage() {
                   <StatBox label="Carbs" value={`${macros.carbs}g`} />
                   <StatBox label="Fat" value={`${macros.fat}g`} />
                 </div>
+                <div style={{ marginTop: 14, textAlign: "center" }}>
+                  <Link href="/onboarding?update=1" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "#1e2d4a", fontFamily: "sans-serif", textDecoration: "none", padding: "8px 16px", background: "rgba(30,45,74,0.05)", border: "1px solid rgba(30,45,74,0.18)", borderRadius: 20, fontWeight: 700, letterSpacing: 0.5 }}>
+                    ✦ Recalculate my macros (guided)
+                  </Link>
+                </div>
               </div>
             )}
 

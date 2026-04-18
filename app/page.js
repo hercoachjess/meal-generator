@@ -1,120 +1,133 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useRef } from "react";
+import MacroCalculator from "./_components/MacroCalculator";
 
 export default function LandingPage() {
+  const router = useRouter();
+  const calcRef = useRef(null);
+
+  function scrollToCalc() {
+    calcRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
   function scrollTo(id) {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
   }
 
+  // When user completes the calc on landing, send them to signup carrying their data
+  function handleUnlock() {
+    router.push("/login?from=calc");
+  }
+
   return (
-    <div className="landing" style={{ fontFamily: "'Georgia', serif", background: "#f5f5f3", minHeight: "100vh", color: "#1a1a1a" }}>
+    <div style={{ fontFamily: "'Georgia', serif", background: "#f5f5f3", minHeight: "100vh", color: "#1a1a1a" }}>
       <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet" />
 
       <style>{`
         * { box-sizing: border-box; }
 
         /* NAV */
-        .nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 48px; border-bottom: 1px solid #e8e4dc; background: #fff; position: sticky; top: 0; z-index: 50; }
-        .nav-logo { flex: 0 0 180px; font-size: 20px; color: #1e2d4a; line-height: 1; }
+        .nav { display: flex; justify-content: space-between; align-items: center; padding: 18px 48px; border-bottom: 1px solid #e8e4dc; background: rgba(255,255,255,0.92); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 50; }
+        .nav-logo { flex: 0 0 auto; font-size: 20px; color: #1e2d4a; line-height: 1; }
         .nav-links { flex: 1; display: flex; justify-content: center; gap: 32px; font-size: 12px; letter-spacing: 0.5px; font-family: sans-serif; white-space: nowrap; }
-        .nav-links span { cursor: pointer; color: #555; }
+        .nav-links span { cursor: pointer; color: #555; transition: color 0.15s; }
         .nav-links span:hover { color: #1e2d4a; }
-        .nav-buttons { flex: 0 0 auto; display: flex; gap: 12px; align-items: center; margin-left: 40px; }
-        .btn-outline { padding: 11px 22px; background: transparent; color: #1e2d4a; border: 1px solid #1e2d4a; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase; font-family: sans-serif; white-space: nowrap; text-decoration: none; display: inline-block; }
-        .btn-navy { padding: 11px 28px; background: #1e2d4a; color: #fff; border: none; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase; font-family: sans-serif; white-space: nowrap; text-decoration: none; display: inline-block; }
-        .btn-gold { padding: 15px 40px; background: #C9A84C; color: #1a1a1a; border: none; border-radius: 4px; font-size: 13px; font-weight: 700; cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase; font-family: sans-serif; text-decoration: none; display: inline-block; }
-        .btn-navy-lg { padding: 15px 40px; background: #1e2d4a; color: #fff; border: none; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; letter-spacing: 1px; font-family: sans-serif; }
+        .nav-buttons { flex: 0 0 auto; display: flex; gap: 10px; align-items: center; }
+        .btn-outline { padding: 11px 22px; background: transparent; color: #1e2d4a; border: 1px solid #1e2d4a; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase; font-family: sans-serif; white-space: nowrap; text-decoration: none; display: inline-block; transition: all 0.15s; }
+        .btn-outline:hover { background: #1e2d4a; color: #fff; }
+        .btn-navy { padding: 11px 22px; background: #1e2d4a; color: #fff; border: none; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase; font-family: sans-serif; white-space: nowrap; text-decoration: none; display: inline-block; transition: all 0.15s; }
+        .btn-navy:hover { background: #152138; }
 
         /* HERO */
-        .hero { background: #fafaf8; padding: 110px 64px 90px; text-align: center; }
-        .hero h1 { font-size: clamp(38px, 6vw, 70px); font-weight: 400; line-height: 1.1; margin: 0 0 24px; color: #1a1a1a; letter-spacing: -1px; }
-        .hero p { font-size: 17px; color: #888; max-width: 500px; margin: 0 auto 48px; line-height: 1.9; font-family: sans-serif; font-weight: 300; }
-        .hero-buttons { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+        .hero { background: linear-gradient(180deg, #fafaf8 0%, #f5f2ea 50%, #fafaf8 100%); padding: 70px 48px 40px; text-align: center; position: relative; overflow: hidden; }
+        .hero::before { content: ""; position: absolute; top: -100px; right: -100px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(201,168,76,0.15) 0%, transparent 70%); border-radius: 50%; pointer-events: none; }
+        .hero::after  { content: ""; position: absolute; bottom: -140px; left: -100px; width: 420px; height: 420px; background: radial-gradient(circle, rgba(30,45,74,0.08) 0%, transparent 70%); border-radius: 50%; pointer-events: none; }
+        .hero-inner { position: relative; z-index: 1; max-width: 780px; margin: 0 auto; }
+        .hero-label { display: inline-block; background: rgba(201,168,76,0.14); border: 1px solid rgba(201,168,76,0.4); border-radius: 20px; padding: 6px 18px; font-size: 11px; color: #9a7a28; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 24px; font-family: sans-serif; font-weight: 700; }
+        .hero h1 { font-size: clamp(38px, 5.5vw, 64px); font-weight: 400; line-height: 1.08; margin: 0 0 22px; color: #1a1a1a; letter-spacing: -1px; }
+        .hero h1 em { color: #C9A84C; font-style: italic; font-weight: 400; }
+        .hero-sub { font-size: 18px; color: #777; max-width: 540px; margin: 0 auto 34px; line-height: 1.7; font-family: sans-serif; font-weight: 300; }
+        .hero-cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
+        .btn-gold { padding: 17px 36px; background: #C9A84C; color: #1a1a1a; border: none; border-radius: 6px; font-size: 13px; font-weight: 800; cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase; font-family: sans-serif; text-decoration: none; display: inline-block; transition: all 0.18s; box-shadow: 0 4px 18px rgba(201,168,76,0.35); }
+        .btn-gold:hover { background: #b89640; transform: translateY(-1px); box-shadow: 0 6px 22px rgba(201,168,76,0.45); }
+        .btn-ghost { padding: 17px 28px; background: transparent; color: #1e2d4a; border: 1px solid #1e2d4a; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; letter-spacing: 1px; font-family: sans-serif; text-decoration: none; display: inline-block; transition: all 0.15s; }
+        .btn-ghost:hover { background: #1e2d4a; color: #fff; }
+        .trust-row { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; font-size: 11px; color: #999; font-family: sans-serif; margin-top: 8px; }
+        .trust-row span { display: inline-flex; align-items: center; gap: 5px; }
+        .trust-row .check { color: #2d7a4f; font-weight: 800; }
 
-        /* MOCK CARDS */
-        .mock-section { max-width: 900px; margin: 0 auto; padding: 0 64px; }
-        .mock-inner { background: linear-gradient(135deg,#1a1a1a,#2d2d2d,#1a1a1a); border-radius: 12px; height: 320px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .mock-cards { display: flex; gap: 16px; padding: 24px; justify-content: center; width: 100%; overflow-x: auto; }
-        .mock-card { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 20px; min-width: 190px; flex-shrink: 0; }
+        /* CALC SECTION */
+        .calc-section { padding: 50px 24px 80px; background: linear-gradient(180deg, #fafaf8 0%, #f5f5f3 100%); }
+        .calc-header { text-align: center; margin-bottom: 34px; max-width: 600px; margin-left: auto; margin-right: auto; padding: 0 16px; }
+        .calc-sublabel { font-size: 11px; color: #C9A84C; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 14px; font-family: sans-serif; font-weight: 700; }
+        .calc-header h2 { font-size: clamp(26px, 4vw, 38px); font-weight: 400; color: #1a1a1a; margin: 0 0 14px; letter-spacing: -0.5px; }
+        .calc-header p { font-size: 15px; color: #888; margin: 0; line-height: 1.7; font-family: sans-serif; }
 
         /* STATS */
-        .stats { display: flex; justify-content: center; padding: 80px 64px; flex-wrap: wrap; max-width: 800px; margin: 0 auto; background: #fff; }
-        .stat { text-align: center; flex: 1; min-width: 140px; padding: 20px 40px; border-right: 1px solid #e8e4dc; }
+        .stats { display: flex; justify-content: center; padding: 64px 48px; flex-wrap: wrap; max-width: 800px; margin: 0 auto; background: #fff; }
+        .stat { text-align: center; flex: 1; min-width: 140px; padding: 18px 32px; border-right: 1px solid #e8e4dc; }
         .stat:last-child { border-right: none; }
 
         /* FEATURES */
-        .features { max-width: 960px; margin: 0 auto; padding: 100px 64px; background: #f5f5f3; }
-        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #ddd; }
-        .feature-card { background: #fff; padding: 44px 36px; }
+        .features { max-width: 980px; margin: 0 auto; padding: 90px 48px; background: #f5f5f3; }
+        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #ddd; border-radius: 8px; overflow: hidden; }
+        .feature-card { background: #fff; padding: 40px 32px; transition: background 0.2s; }
+        .feature-card:hover { background: #fafaf8; }
 
         /* HOW IT WORKS */
-        .how { background: #fff; padding: 100px 64px; border-top: 1px solid #e8e4dc; border-bottom: 1px solid #e8e4dc; }
-        .how-inner { max-width: 820px; margin: 0 auto; text-align: center; }
-        .how-steps { display: flex; gap: 60px; justify-content: center; flex-wrap: wrap; }
-        .how-step { max-width: 220px; }
+        .how { background: #fff; padding: 90px 48px; border-top: 1px solid #e8e4dc; border-bottom: 1px solid #e8e4dc; }
+        .how-inner { max-width: 860px; margin: 0 auto; text-align: center; }
+        .how-steps { display: flex; gap: 48px; justify-content: center; flex-wrap: wrap; margin-top: 56px; }
+        .how-step { max-width: 230px; flex: 1; min-width: 200px; }
 
         /* PRICING */
-        .pricing { max-width: 600px; margin: 0 auto; padding: 100px 64px; text-align: center; }
-        .pricing-card { background: #fff; border: 1px solid #e8e4dc; border-radius: 8px; padding: 56px 48px; box-shadow: 0 4px 40px rgba(0,0,0,0.06); }
-        .btn-dark-full { display: block; width: 100%; margin-top: 36px; padding: 16px; background: #1a1a1a; color: #fff; border: none; border-radius: 4px; font-size: 13px; font-weight: 700; cursor: pointer; letter-spacing: 2px; text-transform: uppercase; font-family: sans-serif; text-decoration: none; }
+        .pricing { max-width: 600px; margin: 0 auto; padding: 90px 48px; text-align: center; }
+        .pricing-card { background: #fff; border: 1px solid #e8e4dc; border-radius: 12px; padding: 50px 44px; box-shadow: 0 6px 38px rgba(0,0,0,0.06); }
+        .btn-dark-full { display: block; width: 100%; margin-top: 32px; padding: 16px; background: #1a1a1a; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; letter-spacing: 2px; text-transform: uppercase; font-family: sans-serif; text-decoration: none; transition: background 0.15s; }
+        .btn-dark-full:hover { background: #333; }
 
         /* CTA */
-        .cta { background: #1e2d4a; padding: 80px 64px; text-align: center; }
+        .cta { background: linear-gradient(135deg, #1e2d4a 0%, #2a3d5e 50%, #1e2d4a 100%); padding: 80px 48px; text-align: center; color: #fff; }
 
         /* FOOTER */
-        .footer { background: #fff; border-top: 1px solid #e8e4dc; padding: 36px 64px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+        .footer { background: #fff; border-top: 1px solid #e8e4dc; padding: 32px 48px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
 
-        /* LABEL */
-        .label { display: inline-block; background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.4); border-radius: 20px; padding: 6px 18px; font-size: 11px; color: #C9A84C; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 28px; font-family: sans-serif; font-weight: 700; }
-        .sublabel { font-size: 11px; color: #C9A84C; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 16px; font-family: sans-serif; font-weight: 700; }
+        .sublabel { font-size: 11px; color: #C9A84C; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 14px; font-family: sans-serif; font-weight: 700; }
 
-        /* ── MOBILE ── */
+        /* MOBILE */
         @media (max-width: 768px) {
-          .nav { padding: 16px 20px; }
+          .nav { padding: 14px 18px; }
           .nav-logo { flex: 1; font-size: 18px; }
           .nav-links { display: none; }
-          .nav-buttons { margin-left: 0; gap: 8px; }
           .btn-outline { padding: 9px 14px; font-size: 10px; }
-          .btn-navy { padding: 9px 14px; font-size: 10px; }
+          .btn-navy   { padding: 9px 14px; font-size: 10px; }
 
-          .hero { padding: 60px 24px 56px; }
-          .hero p { font-size: 15px; }
+          .hero { padding: 48px 22px 30px; }
+          .hero-sub { font-size: 15px; }
 
-          .mock-section { padding: 0 20px; }
-          .mock-inner { height: auto; padding: 16px 0; }
-          .mock-cards { gap: 12px; padding: 16px; justify-content: flex-start; }
+          .calc-section { padding: 36px 16px 60px; }
 
-          .stats { padding: 48px 24px; }
-          .stat { padding: 16px 20px; border-right: none; border-bottom: 1px solid #e8e4dc; }
+          .stats { padding: 40px 22px; }
+          .stat { padding: 14px 20px; border-right: none; border-bottom: 1px solid #e8e4dc; }
           .stat:last-child { border-bottom: none; }
 
-          .features { padding: 60px 20px; }
+          .features { padding: 56px 18px; }
           .features-grid { grid-template-columns: 1fr; }
 
-          .how { padding: 60px 24px; }
-          .how-steps { gap: 40px; }
-          .how-step { max-width: 100%; width: 100%; }
+          .how { padding: 56px 22px; }
+          .how-steps { gap: 32px; }
+          .how-step { max-width: 100%; }
 
-          .pricing { padding: 60px 20px; }
-          .pricing-card { padding: 36px 24px; }
+          .pricing { padding: 56px 18px; }
+          .pricing-card { padding: 32px 22px; }
 
-          .cta { padding: 60px 24px; }
-
-          .footer { padding: 28px 24px; flex-direction: column; text-align: center; }
+          .cta { padding: 56px 22px; }
+          .footer { padding: 24px 22px; flex-direction: column; text-align: center; }
         }
 
-        /* ── TABLET ── */
         @media (min-width: 769px) and (max-width: 1024px) {
-          .nav { padding: 18px 32px; }
-          .hero { padding: 80px 40px 70px; }
-          .mock-section { padding: 0 40px; }
-          .stats { padding: 60px 40px; }
-          .features { padding: 80px 40px; }
           .features-grid { grid-template-columns: repeat(2, 1fr); }
-          .how { padding: 80px 40px; }
-          .pricing { padding: 80px 40px; }
-          .cta { padding: 60px 40px; }
-          .footer { padding: 28px 40px; }
         }
       `}</style>
 
@@ -126,82 +139,79 @@ export default function LandingPage() {
           <span style={{ color: "#C9A84C", fontFamily: "'Great Vibes', cursive", fontWeight: 400, fontSize: 16, marginLeft: 1, verticalAlign: "middle" }}>Jess</span>
         </div>
         <div className="nav-links">
+          <span onClick={scrollToCalc}>Calculate</span>
           <span onClick={() => scrollTo("features")}>Features</span>
           <span onClick={() => scrollTo("how-it-works")}>How It Works</span>
           <span onClick={() => scrollTo("pricing")}>Pricing</span>
         </div>
         <div className="nav-buttons">
           <Link href="/login" className="btn-outline">Log In</Link>
-          <Link href="/login" className="btn-navy">Get Started</Link>
+          <button onClick={scrollToCalc} className="btn-navy">Start Free</button>
         </div>
       </nav>
 
       {/* HERO */}
       <section className="hero">
-        <div className="label">AI-Powered Nutrition Planning</div>
-        <h1>
-          Meals matched<br />to <span style={{ color: "#C9A84C", fontStyle: "italic" }}>your macros.</span>
-        </h1>
-        <p>
-          AI-generated meal plans personalised to your body, goals and taste. Built for women who want real results without the guesswork.
-        </p>
-        <div className="hero-buttons">
-          <Link href="/login" className="btn-gold">Start Free Trial</Link>
-          <button className="btn-navy-lg" onClick={() => scrollTo("how-it-works")}>See How It Works →</button>
-        </div>
-      </section>
-
-      {/* MOCK APP PREVIEW */}
-      <section className="mock-section">
-        <div className="mock-inner">
-          <div className="mock-cards">
-            {["🥗 Lemon Herb Chicken", "🍜 Asian Beef Bowl", "🥑 Salmon Avocado"].map((meal, i) => (
-              <div key={i} className="mock-card">
-                <div style={{ fontSize: 22, marginBottom: 10 }}>{meal.split(" ")[0]}</div>
-                <div style={{ fontSize: 13, color: "#fff", fontFamily: "sans-serif", fontWeight: 600, marginBottom: 6 }}>{meal.slice(3)}</div>
-                <div style={{ fontSize: 11, color: "#C9A84C", fontFamily: "sans-serif" }}>548 cal · 41g protein</div>
-                <div style={{ marginTop: 12, display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {["Low Carb", "High Protein"].map(t => (
-                    <span key={t} style={{ fontSize: 9, background: "#C9A84C22", color: "#C9A84C", padding: "3px 8px", borderRadius: 10, fontFamily: "sans-serif", letterSpacing: 1 }}>{t}</span>
-                  ))}
-                </div>
-              </div>
-            ))}
+        <div className="hero-inner">
+          <div className="hero-label">✨ Free Macro Calculator</div>
+          <h1>
+            Get your personalised<br />
+            macro blueprint in <em>60 seconds</em>
+          </h1>
+          <p className="hero-sub">
+            A free science-backed calculator that reveals exactly what to eat for your body, your goal and your timeline. No account needed to find out.
+          </p>
+          <div className="hero-cta-row">
+            <button onClick={scrollToCalc} className="btn-gold">Calculate My Macros ↓</button>
+            <button onClick={() => scrollTo("how-it-works")} className="btn-ghost">See How It Works →</button>
+          </div>
+          <div className="trust-row">
+            <span><span className="check">✓</span> No credit card</span>
+            <span><span className="check">✓</span> No spam</span>
+            <span><span className="check">✓</span> 60 seconds</span>
           </div>
         </div>
       </section>
 
+      {/* THE CALCULATOR — main lead magnet */}
+      <section ref={calcRef} className="calc-section" id="calculator">
+        <div className="calc-header">
+          <div className="calc-sublabel">Your Free Blueprint</div>
+          <h2>Let&apos;s build your plan</h2>
+          <p>Answer 8 quick questions and we&apos;ll reveal the exact calories and macros your body needs to hit your goal.</p>
+        </div>
+        <MacroCalculator mode="landing" onUnlock={handleUnlock} />
+      </section>
+
       {/* STATS */}
       <section className="stats">
-        {[["500+", "Meals Generated"], ["98%", "Client Retention"], ["4.9★", "Average Rating"]].map(([num, label]) => (
+        {[["8", "Quick Questions"], ["100%", "Personalised"], ["60s", "To Your Plan"]].map(([num, label]) => (
           <div key={label} className="stat">
-            <div style={{ fontSize: 40, color: "#1a1a1a", fontWeight: 400, marginBottom: 8 }}>{num}</div>
+            <div style={{ fontSize: 40, color: "#1a1a1a", fontWeight: 400, marginBottom: 6, fontFamily: "Georgia, serif" }}>{num}</div>
             <div style={{ fontSize: 11, color: "#aaa", letterSpacing: 2, textTransform: "uppercase", fontFamily: "sans-serif" }}>{label}</div>
           </div>
         ))}
       </section>
 
-      <div style={{ borderTop: "1px solid #e8e4dc", maxWidth: 860, margin: "0 auto" }} />
-
       {/* FEATURES */}
       <section id="features" className="features">
-        <div style={{ textAlign: "center", marginBottom: 64 }}>
+        <div style={{ textAlign: "center", marginBottom: 56 }}>
           <div className="sublabel">What&apos;s Included</div>
-          <h2 style={{ fontSize: 34, fontWeight: 400, color: "#1a1a1a", margin: 0 }}>Everything you need to eat well</h2>
+          <h2 style={{ fontSize: 34, fontWeight: 400, color: "#1a1a1a", margin: 0, letterSpacing: -0.5 }}>Everything you need to eat well</h2>
         </div>
         <div className="features-grid">
           {[
             ["🍽", "AI Meal Generator", "Tell us your macros. Get a perfectly matched meal in seconds."],
-            ["📅", "Weekly Planner", "Plan your full week across breakfast, lunch and dinner."],
-            ["🛒", "Smart Shopping List", "Ingredients compiled, grouped and ready to shop."],
-            ["📊", "Client Profile", "Your BMR and calorie goals via Harris-Benedict formula."],
+            ["📅", "Weekly Planner", "Plan your full week across breakfast, lunch, dinner & snacks."],
+            ["🛒", "Smart Shopping List", "Ingredients compiled, grouped and ready to shop or print."],
+            ["📊", "Client Profile", "Your BMR and calorie targets recalculated anytime you change."],
             ["❤️", "Save Favourites", "Build your personal library of go-to meals."],
-            ["📄", "PDF Download", "Download your weekly plan to keep, print or share."],
+            ["📄", "PDF Download", "Download your plan to keep, print or share."],
           ].map(([icon, title, desc]) => (
             <div key={title} className="feature-card">
-              <div style={{ fontSize: 24, marginBottom: 16 }}>{icon}</div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: "#1a1a1a", marginBottom: 10, fontFamily: "sans-serif" }}>{title}</div>
-              <div style={{ fontSize: 13, color: "#999", lineHeight: 1.8, fontFamily: "sans-serif" }}>{desc}</div>
+              <div style={{ fontSize: 28, marginBottom: 14 }}>{icon}</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#1a1a1a", marginBottom: 10, fontFamily: "sans-serif" }}>{title}</div>
+              <div style={{ fontSize: 13, color: "#888", lineHeight: 1.8, fontFamily: "sans-serif" }}>{desc}</div>
             </div>
           ))}
         </div>
@@ -211,20 +221,23 @@ export default function LandingPage() {
       <section id="how-it-works" className="how">
         <div className="how-inner">
           <div className="sublabel">Simple Process</div>
-          <h2 style={{ fontSize: 34, fontWeight: 400, color: "#1a1a1a", marginBottom: 72 }}>Three steps to your perfect meal plan</h2>
+          <h2 style={{ fontSize: 34, fontWeight: 400, color: "#1a1a1a", margin: 0, letterSpacing: -0.5 }}>Three steps to your perfect meal plan</h2>
           <div className="how-steps">
             {[
-              ["01", "Set Your Goals", "Enter your weight, height and target. We calculate your exact calorie and macro needs."],
-              ["02", "Generate Meals", "Our AI creates meals matched to your macros, preferences and key ingredients."],
-              ["03", "Plan Your Week", "Fill your 7-day planner and download your shopping list in one tap."],
+              ["01", "Calculate", "Answer 8 quick questions and get your exact calorie and macro targets — free, no account."],
+              ["02", "Generate", "Our AI creates meals matched to your macros, preferences and favourite ingredients."],
+              ["03", "Plan", "Fill your 7-day planner, download your shopping list and crush your goal."],
             ].map(([num, title, desc]) => (
               <div key={num} className="how-step">
-                <div style={{ fontSize: 11, color: "#C9A84C", letterSpacing: 3, marginBottom: 16, fontFamily: "sans-serif", fontWeight: 700 }}>{num}</div>
-                <div style={{ width: 1, height: 32, background: "#e8e4dc", margin: "0 auto 20px" }} />
-                <div style={{ fontSize: 16, color: "#1a1a1a", marginBottom: 12, fontFamily: "sans-serif", fontWeight: 600 }}>{title}</div>
-                <div style={{ fontSize: 13, color: "#999", lineHeight: 1.8, fontFamily: "sans-serif" }}>{desc}</div>
+                <div style={{ fontSize: 11, color: "#C9A84C", letterSpacing: 3, marginBottom: 14, fontFamily: "sans-serif", fontWeight: 700 }}>{num}</div>
+                <div style={{ width: 1, height: 32, background: "#e8e4dc", margin: "0 auto 18px" }} />
+                <div style={{ fontSize: 16, color: "#1a1a1a", marginBottom: 10, fontFamily: "sans-serif", fontWeight: 700 }}>{title}</div>
+                <div style={{ fontSize: 13, color: "#888", lineHeight: 1.8, fontFamily: "sans-serif" }}>{desc}</div>
               </div>
             ))}
+          </div>
+          <div style={{ marginTop: 48 }}>
+            <button onClick={scrollToCalc} className="btn-gold">Start With Step 1 ↑</button>
           </div>
         </div>
       </section>
@@ -232,14 +245,17 @@ export default function LandingPage() {
       {/* PRICING */}
       <section id="pricing" className="pricing">
         <div className="sublabel">Pricing</div>
-        <h2 style={{ fontSize: 34, fontWeight: 400, color: "#1a1a1a", marginBottom: 56 }}>One simple plan</h2>
+        <h2 style={{ fontSize: 34, fontWeight: 400, color: "#1a1a1a", marginBottom: 16, letterSpacing: -0.5 }}>One simple plan</h2>
+        <p style={{ fontSize: 14, color: "#999", marginBottom: 40, fontFamily: "sans-serif", lineHeight: 1.7 }}>
+          The macro calculator is free forever. Unlock the full app to generate meals, build weekly plans and track progress.
+        </p>
         <div className="pricing-card">
           <div className="sublabel">Monthly</div>
           <div style={{ fontSize: 60, color: "#1a1a1a", marginBottom: 4, fontWeight: 300 }}>£<span style={{ fontFamily: "sans-serif" }}>19</span></div>
-          <div style={{ fontSize: 13, color: "#aaa", marginBottom: 40, fontFamily: "sans-serif" }}>per month · cancel anytime</div>
-          {["AI Meal Generator", "Weekly Planner", "Shopping List", "Client Profile & BMR", "PDF Downloads", "Save Favourites"].map(f => (
-            <div key={f} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, textAlign: "left" }}>
-              <span style={{ color: "#C9A84C", fontSize: 13, fontWeight: 700 }}>✓</span>
+          <div style={{ fontSize: 13, color: "#aaa", marginBottom: 36, fontFamily: "sans-serif" }}>per month · cancel anytime</div>
+          {["AI Meal Generator", "Weekly Planner", "Smart Shopping List", "Client Profile & BMR", "PDF Downloads", "Save Favourites"].map(f => (
+            <div key={f} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, textAlign: "left" }}>
+              <span style={{ color: "#C9A84C", fontSize: 13, fontWeight: 800 }}>✓</span>
               <span style={{ fontSize: 14, color: "#555", fontFamily: "sans-serif" }}>{f}</span>
             </div>
           ))}
@@ -250,9 +266,9 @@ export default function LandingPage() {
       {/* CTA BANNER */}
       <section className="cta">
         <div className="sublabel">Ready to start?</div>
-        <h2 style={{ fontSize: 36, fontWeight: 400, color: "#fff", marginBottom: 12 }}>Your perfect meal plan is waiting.</h2>
-        <p style={{ color: "#aaa", fontSize: 15, marginBottom: 40, fontFamily: "sans-serif" }}>Join hundreds of women eating smarter every week.</p>
-        <Link href="/login" className="btn-gold">Get Started Today</Link>
+        <h2 style={{ fontSize: 36, fontWeight: 400, marginBottom: 12, letterSpacing: -0.5 }}>Your macros are waiting.</h2>
+        <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 15, marginBottom: 36, fontFamily: "sans-serif" }}>Takes just 60 seconds. No credit card. No email unless you want one.</p>
+        <button onClick={scrollToCalc} className="btn-gold">Calculate Mine Now ↑</button>
       </section>
 
       {/* FOOTER */}
@@ -264,7 +280,6 @@ export default function LandingPage() {
         </div>
         <div style={{ fontSize: 12, color: "#bbb", fontFamily: "sans-serif" }}>© 2026 HerCoachJess. All rights reserved.</div>
       </footer>
-
     </div>
   );
 }
