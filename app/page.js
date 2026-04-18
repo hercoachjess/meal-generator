@@ -1,21 +1,43 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import MacroCalculator from "./_components/MacroCalculator";
 
 export default function LandingPage() {
   const router = useRouter();
-  const calcRef = useRef(null);
+  const calcRef     = useRef(null);
+  const postReveal  = useRef(null);
+  const [revealed, setRevealed] = useState(false);
+
+  // If the user previously completed the flow, show post-reveal sections on load
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("macroCalcProgress_v1");
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (saved?.completed || saved?.step === 8) setRevealed(true);
+    } catch { /* ignore */ }
+  }, []);
 
   function scrollToCalc() {
     calcRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
-  function scrollTo(id) {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+
+  function handleReveal() {
+    setRevealed(true);
   }
 
-  // When user completes the calc on landing, send them to signup carrying their data
+  // Smooth-scroll to the reveal sections once they appear
+  useEffect(() => {
+    if (!revealed) return;
+    // Let the DOM paint the new sections first
+    const t = setTimeout(() => {
+      postReveal.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 500);
+    return () => clearTimeout(t);
+  }, [revealed]);
+
   function handleUnlock() {
     router.push("/login?from=calc");
   }
@@ -30,9 +52,6 @@ export default function LandingPage() {
         /* NAV */
         .nav { display: flex; justify-content: space-between; align-items: center; padding: 18px 48px; border-bottom: 1px solid #e8e4dc; background: rgba(255,255,255,0.92); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 50; }
         .nav-logo { flex: 0 0 auto; font-size: 20px; color: #1e2d4a; line-height: 1; }
-        .nav-links { flex: 1; display: flex; justify-content: center; gap: 32px; font-size: 12px; letter-spacing: 0.5px; font-family: sans-serif; white-space: nowrap; }
-        .nav-links span { cursor: pointer; color: #555; transition: color 0.15s; }
-        .nav-links span:hover { color: #1e2d4a; }
         .nav-buttons { flex: 0 0 auto; display: flex; gap: 10px; align-items: center; }
         .btn-outline { padding: 11px 22px; background: transparent; color: #1e2d4a; border: 1px solid #1e2d4a; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase; font-family: sans-serif; white-space: nowrap; text-decoration: none; display: inline-block; transition: all 0.15s; }
         .btn-outline:hover { background: #1e2d4a; color: #fff; }
@@ -40,7 +59,7 @@ export default function LandingPage() {
         .btn-navy:hover { background: #152138; }
 
         /* HERO */
-        .hero { background: linear-gradient(180deg, #fafaf8 0%, #f5f2ea 50%, #fafaf8 100%); padding: 70px 48px 40px; text-align: center; position: relative; overflow: hidden; }
+        .hero { background: linear-gradient(180deg, #fafaf8 0%, #f5f2ea 50%, #fafaf8 100%); padding: 72px 48px 40px; text-align: center; position: relative; overflow: hidden; }
         .hero::before { content: ""; position: absolute; top: -100px; right: -100px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(201,168,76,0.15) 0%, transparent 70%); border-radius: 50%; pointer-events: none; }
         .hero::after  { content: ""; position: absolute; bottom: -140px; left: -100px; width: 420px; height: 420px; background: radial-gradient(circle, rgba(30,45,74,0.08) 0%, transparent 70%); border-radius: 50%; pointer-events: none; }
         .hero-inner { position: relative; z-index: 1; max-width: 780px; margin: 0 auto; }
@@ -58,16 +77,15 @@ export default function LandingPage() {
         .trust-row .check { color: #2d7a4f; font-weight: 800; }
 
         /* CALC SECTION */
-        .calc-section { padding: 50px 24px 80px; background: linear-gradient(180deg, #fafaf8 0%, #f5f5f3 100%); }
-        .calc-header { text-align: center; margin-bottom: 34px; max-width: 600px; margin-left: auto; margin-right: auto; padding: 0 16px; }
-        .calc-sublabel { font-size: 11px; color: #C9A84C; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 14px; font-family: sans-serif; font-weight: 700; }
-        .calc-header h2 { font-size: clamp(26px, 4vw, 38px); font-weight: 400; color: #1a1a1a; margin: 0 0 14px; letter-spacing: -0.5px; }
+        .calc-section { padding: 40px 24px 70px; background: linear-gradient(180deg, #fafaf8 0%, #f5f5f3 100%); }
+        .calc-header { text-align: center; margin-bottom: 30px; max-width: 600px; margin-left: auto; margin-right: auto; padding: 0 16px; }
+        .calc-sublabel { font-size: 11px; color: #C9A84C; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 12px; font-family: sans-serif; font-weight: 700; }
+        .calc-header h2 { font-size: clamp(26px, 4vw, 36px); font-weight: 400; color: #1a1a1a; margin: 0 0 12px; letter-spacing: -0.5px; }
         .calc-header p { font-size: 15px; color: #888; margin: 0; line-height: 1.7; font-family: sans-serif; }
 
-        /* STATS */
-        .stats { display: flex; justify-content: center; padding: 64px 48px; flex-wrap: wrap; max-width: 800px; margin: 0 auto; background: #fff; }
-        .stat { text-align: center; flex: 1; min-width: 140px; padding: 18px 32px; border-right: 1px solid #e8e4dc; }
-        .stat:last-child { border-right: none; }
+        /* POST-REVEAL (hidden until calculator completes) */
+        .post-reveal { animation: fadeSlideUp 0.7s cubic-bezier(0.4,0,0.2,1); }
+        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
 
         /* FEATURES */
         .features { max-width: 980px; margin: 0 auto; padding: 90px 48px; background: #f5f5f3; }
@@ -99,18 +117,13 @@ export default function LandingPage() {
         @media (max-width: 768px) {
           .nav { padding: 14px 18px; }
           .nav-logo { flex: 1; font-size: 18px; }
-          .nav-links { display: none; }
           .btn-outline { padding: 9px 14px; font-size: 10px; }
           .btn-navy   { padding: 9px 14px; font-size: 10px; }
 
           .hero { padding: 48px 22px 30px; }
           .hero-sub { font-size: 15px; }
 
-          .calc-section { padding: 36px 16px 60px; }
-
-          .stats { padding: 40px 22px; }
-          .stat { padding: 14px 20px; border-right: none; border-bottom: 1px solid #e8e4dc; }
-          .stat:last-child { border-bottom: none; }
+          .calc-section { padding: 30px 16px 50px; }
 
           .features { padding: 56px 18px; }
           .features-grid { grid-template-columns: 1fr; }
@@ -131,22 +144,16 @@ export default function LandingPage() {
         }
       `}</style>
 
-      {/* NAV */}
+      {/* NAV — minimal, just calculator + log in */}
       <nav className="nav">
         <div className="nav-logo">
           <span style={{ fontStyle: "italic", fontWeight: 300, color: "#1e2d4a" }}>her</span>
           <span style={{ fontWeight: 800, color: "#1e2d4a" }}>coach.</span>
           <span style={{ color: "#C9A84C", fontFamily: "'Great Vibes', cursive", fontWeight: 400, fontSize: 16, marginLeft: 1, verticalAlign: "middle" }}>Jess</span>
         </div>
-        <div className="nav-links">
-          <span onClick={scrollToCalc}>Calculate</span>
-          <span onClick={() => scrollTo("features")}>Features</span>
-          <span onClick={() => scrollTo("how-it-works")}>How It Works</span>
-          <span onClick={() => scrollTo("pricing")}>Pricing</span>
-        </div>
         <div className="nav-buttons">
           <Link href="/login" className="btn-outline">Log In</Link>
-          <button onClick={scrollToCalc} className="btn-navy">Start Free</button>
+          <button onClick={scrollToCalc} className="btn-navy">Calculate My Macros</button>
         </div>
       </nav>
 
@@ -163,7 +170,7 @@ export default function LandingPage() {
           </p>
           <div className="hero-cta-row">
             <button onClick={scrollToCalc} className="btn-gold">Calculate My Macros ↓</button>
-            <button onClick={() => scrollTo("how-it-works")} className="btn-ghost">See How It Works →</button>
+            <Link href="/login" className="btn-ghost">Log In →</Link>
           </div>
           <div className="trust-row">
             <span><span className="check">✓</span> No credit card</span>
@@ -173,105 +180,107 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* THE CALCULATOR — main lead magnet */}
+      {/* THE CALCULATOR — the whole lead magnet */}
       <section ref={calcRef} className="calc-section" id="calculator">
         <div className="calc-header">
           <div className="calc-sublabel">Your Free Blueprint</div>
           <h2>Let&apos;s build your plan</h2>
           <p>Answer 8 quick questions and we&apos;ll reveal the exact calories and macros your body needs to hit your goal.</p>
         </div>
-        <MacroCalculator mode="landing" onUnlock={handleUnlock} />
+        <MacroCalculator mode="landing" onUnlock={handleUnlock} onReveal={handleReveal} />
       </section>
 
-      {/* STATS */}
-      <section className="stats">
-        {[["8", "Quick Questions"], ["100%", "Personalised"], ["60s", "To Your Plan"]].map(([num, label]) => (
-          <div key={label} className="stat">
-            <div style={{ fontSize: 40, color: "#1a1a1a", fontWeight: 400, marginBottom: 6, fontFamily: "Georgia, serif" }}>{num}</div>
-            <div style={{ fontSize: 11, color: "#aaa", letterSpacing: 2, textTransform: "uppercase", fontFamily: "sans-serif" }}>{label}</div>
-          </div>
-        ))}
-      </section>
+      {/* ─── POST-REVEAL CONTENT ─── only rendered after user hits the reveal slide */}
+      {revealed && (
+        <div ref={postReveal} className="post-reveal">
 
-      {/* FEATURES */}
-      <section id="features" className="features">
-        <div style={{ textAlign: "center", marginBottom: 56 }}>
-          <div className="sublabel">What&apos;s Included</div>
-          <h2 style={{ fontSize: 34, fontWeight: 400, color: "#1a1a1a", margin: 0, letterSpacing: -0.5 }}>Everything you need to eat well</h2>
-        </div>
-        <div className="features-grid">
-          {[
-            ["🍽", "AI Meal Generator", "Tell us your macros. Get a perfectly matched meal in seconds."],
-            ["📅", "Weekly Planner", "Plan your full week across breakfast, lunch, dinner & snacks."],
-            ["🛒", "Smart Shopping List", "Ingredients compiled, grouped and ready to shop or print."],
-            ["📊", "Client Profile", "Your BMR and calorie targets recalculated anytime you change."],
-            ["❤️", "Save Favourites", "Build your personal library of go-to meals."],
-            ["📄", "PDF Download", "Download your plan to keep, print or share."],
-          ].map(([icon, title, desc]) => (
-            <div key={title} className="feature-card">
-              <div style={{ fontSize: 28, marginBottom: 14 }}>{icon}</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#1a1a1a", marginBottom: 10, fontFamily: "sans-serif" }}>{title}</div>
-              <div style={{ fontSize: 13, color: "#888", lineHeight: 1.8, fontFamily: "sans-serif" }}>{desc}</div>
+          {/* FEATURES */}
+          <section id="features" className="features">
+            <div style={{ textAlign: "center", marginBottom: 56 }}>
+              <div className="sublabel">What&apos;s Included</div>
+              <h2 style={{ fontSize: 34, fontWeight: 400, color: "#1a1a1a", margin: 0, letterSpacing: -0.5 }}>Everything you need to eat well</h2>
+              <p style={{ fontSize: 15, color: "#888", margin: "14px auto 0", maxWidth: 520, lineHeight: 1.7, fontFamily: "sans-serif" }}>
+                Now you have your numbers — here&apos;s what the full app unlocks to help you actually hit them every day.
+              </p>
             </div>
-          ))}
-        </div>
-      </section>
+            <div className="features-grid">
+              {[
+                ["🍽", "AI Meal Generator", "Tell us your macros. Get a perfectly matched meal in seconds."],
+                ["📅", "Weekly Planner", "Plan your full week across breakfast, lunch, dinner & snacks."],
+                ["🛒", "Smart Shopping List", "Ingredients compiled, grouped and ready to shop or print."],
+                ["📊", "Client Profile", "Recalculate your BMR & targets anytime your body changes."],
+                ["❤️", "Save Favourites", "Build your personal library of go-to meals."],
+                ["📄", "PDF Download", "Download your plan to keep, print or share."],
+              ].map(([icon, title, desc]) => (
+                <div key={title} className="feature-card">
+                  <div style={{ fontSize: 28, marginBottom: 14 }}>{icon}</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "#1a1a1a", marginBottom: 10, fontFamily: "sans-serif" }}>{title}</div>
+                  <div style={{ fontSize: 13, color: "#888", lineHeight: 1.8, fontFamily: "sans-serif" }}>{desc}</div>
+                </div>
+              ))}
+            </div>
+          </section>
 
-      {/* HOW IT WORKS */}
-      <section id="how-it-works" className="how">
-        <div className="how-inner">
-          <div className="sublabel">Simple Process</div>
-          <h2 style={{ fontSize: 34, fontWeight: 400, color: "#1a1a1a", margin: 0, letterSpacing: -0.5 }}>Three steps to your perfect meal plan</h2>
-          <div className="how-steps">
-            {[
-              ["01", "Calculate", "Answer 8 quick questions and get your exact calorie and macro targets — free, no account."],
-              ["02", "Generate", "Our AI creates meals matched to your macros, preferences and favourite ingredients."],
-              ["03", "Plan", "Fill your 7-day planner, download your shopping list and crush your goal."],
-            ].map(([num, title, desc]) => (
-              <div key={num} className="how-step">
-                <div style={{ fontSize: 11, color: "#C9A84C", letterSpacing: 3, marginBottom: 14, fontFamily: "sans-serif", fontWeight: 700 }}>{num}</div>
-                <div style={{ width: 1, height: 32, background: "#e8e4dc", margin: "0 auto 18px" }} />
-                <div style={{ fontSize: 16, color: "#1a1a1a", marginBottom: 10, fontFamily: "sans-serif", fontWeight: 700 }}>{title}</div>
-                <div style={{ fontSize: 13, color: "#888", lineHeight: 1.8, fontFamily: "sans-serif" }}>{desc}</div>
+          {/* HOW IT WORKS */}
+          <section id="how-it-works" className="how">
+            <div className="how-inner">
+              <div className="sublabel">How It Works</div>
+              <h2 style={{ fontSize: 34, fontWeight: 400, color: "#1a1a1a", margin: 0, letterSpacing: -0.5 }}>You&apos;ve done step one</h2>
+              <p style={{ fontSize: 15, color: "#888", margin: "14px auto 0", maxWidth: 540, lineHeight: 1.7, fontFamily: "sans-serif" }}>
+                Here&apos;s what happens when you create an account and unlock the app.
+              </p>
+              <div className="how-steps">
+                {[
+                  ["01", "Calculate ✓", "You&apos;ve already done this — your macro blueprint is ready."],
+                  ["02", "Generate", "Our AI creates meals matched to your macros, preferences and favourite ingredients."],
+                  ["03", "Plan", "Fill your 7-day planner, download your shopping list and crush your goal."],
+                ].map(([num, title, desc], i) => (
+                  <div key={num} className="how-step">
+                    <div style={{ fontSize: 11, color: i === 0 ? "#2d7a4f" : "#C9A84C", letterSpacing: 3, marginBottom: 14, fontFamily: "sans-serif", fontWeight: 700 }}>{num}</div>
+                    <div style={{ width: 1, height: 32, background: "#e8e4dc", margin: "0 auto 18px" }} />
+                    <div style={{ fontSize: 16, color: "#1a1a1a", marginBottom: 10, fontFamily: "sans-serif", fontWeight: 700 }} dangerouslySetInnerHTML={{ __html: title }} />
+                    <div style={{ fontSize: 13, color: "#888", lineHeight: 1.8, fontFamily: "sans-serif" }} dangerouslySetInnerHTML={{ __html: desc }} />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div style={{ marginTop: 48 }}>
-            <button onClick={scrollToCalc} className="btn-gold">Start With Step 1 ↑</button>
-          </div>
-        </div>
-      </section>
-
-      {/* PRICING */}
-      <section id="pricing" className="pricing">
-        <div className="sublabel">Pricing</div>
-        <h2 style={{ fontSize: 34, fontWeight: 400, color: "#1a1a1a", marginBottom: 16, letterSpacing: -0.5 }}>One simple plan</h2>
-        <p style={{ fontSize: 14, color: "#999", marginBottom: 40, fontFamily: "sans-serif", lineHeight: 1.7 }}>
-          The macro calculator is free forever. Unlock the full app to generate meals, build weekly plans and track progress.
-        </p>
-        <div className="pricing-card">
-          <div className="sublabel">Monthly</div>
-          <div style={{ fontSize: 60, color: "#1a1a1a", marginBottom: 4, fontWeight: 300 }}>£<span style={{ fontFamily: "sans-serif" }}>19</span></div>
-          <div style={{ fontSize: 13, color: "#aaa", marginBottom: 36, fontFamily: "sans-serif" }}>per month · cancel anytime</div>
-          {["AI Meal Generator", "Weekly Planner", "Smart Shopping List", "Client Profile & BMR", "PDF Downloads", "Save Favourites"].map(f => (
-            <div key={f} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, textAlign: "left" }}>
-              <span style={{ color: "#C9A84C", fontSize: 13, fontWeight: 800 }}>✓</span>
-              <span style={{ fontSize: 14, color: "#555", fontFamily: "sans-serif" }}>{f}</span>
             </div>
-          ))}
-          <Link href="/login" className="btn-dark-full">Start Free Trial</Link>
+          </section>
+
+          {/* PRICING */}
+          <section id="pricing" className="pricing">
+            <div className="sublabel">Ready to unlock?</div>
+            <h2 style={{ fontSize: 34, fontWeight: 400, color: "#1a1a1a", marginBottom: 16, letterSpacing: -0.5 }}>One simple plan</h2>
+            <p style={{ fontSize: 14, color: "#999", marginBottom: 40, fontFamily: "sans-serif", lineHeight: 1.7 }}>
+              Your macro calculation is free forever. Unlock the full app to generate meals, build weekly plans and track progress.
+            </p>
+            <div className="pricing-card">
+              <div className="sublabel">Monthly</div>
+              <div style={{ fontSize: 60, color: "#1a1a1a", marginBottom: 4, fontWeight: 300 }}>£<span style={{ fontFamily: "sans-serif" }}>19</span></div>
+              <div style={{ fontSize: 13, color: "#aaa", marginBottom: 36, fontFamily: "sans-serif" }}>per month · cancel anytime</div>
+              {["AI Meal Generator", "Weekly Planner", "Smart Shopping List", "Client Profile & BMR", "PDF Downloads", "Save Favourites"].map(f => (
+                <div key={f} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, textAlign: "left" }}>
+                  <span style={{ color: "#C9A84C", fontSize: 13, fontWeight: 800 }}>✓</span>
+                  <span style={{ fontSize: 14, color: "#555", fontFamily: "sans-serif" }}>{f}</span>
+                </div>
+              ))}
+              <Link href="/login" className="btn-dark-full">Create My Account</Link>
+              <div style={{ fontSize: 11, color: "#aaa", marginTop: 14, fontFamily: "sans-serif" }}>
+                Already a member? <Link href="/login" style={{ color: "#1e2d4a", fontWeight: 700, textDecoration: "none" }}>Log in →</Link>
+              </div>
+            </div>
+          </section>
+
+          {/* CTA BANNER */}
+          <section className="cta">
+            <div className="sublabel">Your plan is ready</div>
+            <h2 style={{ fontSize: 36, fontWeight: 400, marginBottom: 12, letterSpacing: -0.5 }}>Let&apos;s turn it into meals.</h2>
+            <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 15, marginBottom: 36, fontFamily: "sans-serif" }}>Create your account and we&apos;ll carry your blueprint straight into the app.</p>
+            <Link href="/login" className="btn-gold">Create My Account →</Link>
+          </section>
         </div>
-      </section>
+      )}
 
-      {/* CTA BANNER */}
-      <section className="cta">
-        <div className="sublabel">Ready to start?</div>
-        <h2 style={{ fontSize: 36, fontWeight: 400, marginBottom: 12, letterSpacing: -0.5 }}>Your macros are waiting.</h2>
-        <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 15, marginBottom: 36, fontFamily: "sans-serif" }}>Takes just 60 seconds. No credit card. No email unless you want one.</p>
-        <button onClick={scrollToCalc} className="btn-gold">Calculate Mine Now ↑</button>
-      </section>
-
-      {/* FOOTER */}
+      {/* FOOTER always visible */}
       <footer className="footer">
         <div style={{ fontSize: 18, color: "#1e2d4a", lineHeight: 1 }}>
           <span style={{ fontStyle: "italic", fontWeight: 300 }}>her</span>
