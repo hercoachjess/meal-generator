@@ -340,6 +340,7 @@ export default function MacroCalculator({
   initialData = null,
   onComplete,              // optional callback(data, macros)
   onUnlock,                // what to do at reveal if no account yet
+  onReveal,                // fires once when user first reaches the reveal slide
   hideResume = false,
 }) {
   // If caller provides complete initial data (e.g. from landing localStorage or a profile update),
@@ -374,6 +375,30 @@ export default function MacroCalculator({
     }, 300);
     return () => saveTimer.current && clearTimeout(saveTimer.current);
   }, [step, data, mode]);
+
+  // Auto-populate slider defaults so "Continue" is enabled on first entry
+  // (sliders display a default but don't write to data until dragged)
+  useEffect(() => {
+    if (step === 3 && !data.age) {
+      setData(prev => ({ ...prev, age: "30" }));
+    } else if (step === 4) {
+      setData(prev => {
+        const next = { ...prev };
+        if (!next.height_cm) next.height_cm = "165";
+        if (!next.weight_kg) next.weight_kg = "65";
+        return next;
+      });
+    }
+  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fire onReveal once when the user reaches the final slide
+  const revealFired = useRef(false);
+  useEffect(() => {
+    if (step === 8 && !revealFired.current && onReveal) {
+      revealFired.current = true;
+      onReveal();
+    }
+  }, [step, onReveal]);
 
   function update(patch) { setData(prev => ({ ...prev, ...patch })); }
 
